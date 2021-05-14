@@ -346,7 +346,7 @@ if len(InvoiceList)>0:
     ## Generate Statisitics & Create HTML for message
     #########################################################
     logging.warning("Generating Statistics and formating email message.")
-    header_html = ("<p><center><b>AFI Provisionings Statistics for %s</b></center></br></p>" % ((datetime.strftime(reportdate, "%m/%d/%Y"))))
+    header_html = ("<p><center><b>Provisioning Statistics for %s</b></center></br></p>" % ((datetime.strftime(reportdate, "%m/%d/%Y"))))
 
     ########################################################
     ##  Describe Overall Provisioning Statistics
@@ -395,7 +395,7 @@ if len(InvoiceList)>0:
         writer.save()
 else:
     logging.warning('No invoices found for %s.' % (datetime.strftime(reportdate, "%m/%d/%Y")))
-    header_html = ("<p><center><b>AFI Provisionings Statistics for %s</b></center></br></p>" % (
+    header_html = ("<p><center><b>Provisioning Statistics for %s</b></center></br></p>" % (
         (datetime.strftime(reportdate, "%m/%d/%Y"))))
     message_html = ("<p><b>No Invoices found for this date.</b></p>")
     html = header_html + message_html
