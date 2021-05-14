@@ -9,8 +9,7 @@ for IBM Cloud Classic Virtual Servers (VSIs).
 * IBM Cloud Classic Infrastructure (Aka Softlayer) apiKey and username.  
 * IBM Cloudant Multi-tenant Lite tier instance (https://cloud.ibm.com/catalog/services/cloudant)
 * Email Delivery, Powered by Sendgrid (https://cloud.ibm.com/catalog/infrastructure/email-delivery).
-* A compute node (CentOS or Ubuntu recommended) with Python 3.8+ to run daily reports, and collect periodic provisioning data (every 10 minutes).  Compute Instance does not need to be in same account or even in the IBM Cloud, just needs to have access
-to the SoftLayer API endpoint to collect data.
+* A compute node (CentOS or Ubuntu recommended) with Python 3.8+ to run daily reports, and collect periodic provisioning data.  Compute Instance does not need to be in same account or even in the IBM Cloud, just needs to have access to the public SoftLayer API endpoint to collect data.
 
 _Cloudant Database and periodic data collection process is only requried if expanded Datacenter and Image statistics are required._
 
