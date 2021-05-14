@@ -45,10 +45,10 @@ password = <cloudant apikey>
 
 ```
 ### Scheduling Scripts to run.
-* If you wish to collect statistics on images and vlan information the script requires a Cloudant instance and the credentials to be included in the [Cloudant] section of config.ini.
-because this data is only available while the instance is being provisioned or running it is recommended that this script be run atleast every 10-15 minutes.
+* If you wish to collect statistics on images and vlan information the script must be run periodically (every 15 minutes recommended).  This data is only available while the instance is active.   The script stores the data in the Cloudant database for access when the daily report is run.
 * The daily report should be run nightly, after 3am eastern time to ensure that it captures all the previous days provisioning events.  If the [Cloudant] section is left blank or
 the trackProvisioningEvents script isn't run regularly the Datacenter and Image Statistics will be blank.
+* The daily report can be run adhoc by using ````python generateDailyReport.py --date YYYY/MM/DD```
 
 ### Suggested CRONTAB settings
 ````bazaar
