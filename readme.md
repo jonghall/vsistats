@@ -48,7 +48,8 @@ password = <cloudant apikey>
 * If you wish to collect statistics on images and vlan information the script must be run periodically (every 15 minutes recommended).  This data is only available while the instance is active.   The script stores the data in the Cloudant database for access when the daily report is run.
 * The daily report should be run nightly, after 3am eastern time to ensure that it captures all the previous days provisioning events.  If the [Cloudant] section is left blank or
 the trackProvisioningEvents script isn't run regularly the Datacenter and Image Statistics will be blank.
-* The daily report can be run adhoc by using ````python generateDailyReport.py --date YYYY/MM/DD```
+* The daily report can be run adhoc by running directly.   ````python generateDailyReport.py --date YYYY/MM/DD````
+* If no date is specified it will default to running the report using the previous date.
 
 ### Suggested CRONTAB settings
 ````bazaar
@@ -58,19 +59,19 @@ the trackProvisioningEvents script isn't run regularly the Datacenter and Image 
 ````
 
 ### Python Requirements
-* Python 3.8 or newer must be installed on the server which will run the scripts.
+* Python 3.8 or newer must be installed on the server first which will run the scripts.
 * It is recommended that _virtualenv_ be used. (https://virtualenv.pypa.io/en/latest/)
   * to create a virtual environment in directory where scripts is installed type ````virtualenv venv````
   * to activate virtual environment ````source venv/bin/activate````.  Note the shell scripts will activate the environment before execution.
-* [requirements.txt](/requirements.txt) contain all the Python package requirements.  To install packages ````pip install -r requirements.txt````
+* [requirements.txt](requirements.txt) contain all the Python package requirements.  To install packages ````pip install -r requirements.txt````
 * Adjust directories in the shell scripts to reflect the locations of the scripts and virtualenv.
 
 ### Daily Report Email output sent via IBM Cloud Email Delivery (aka Sendgrid)
-* A daily email will be sent by _generateDailyReport.py_ if sendgrid credentials are included in config.ini.
+* A daily email will be sent by [generateDailyReport.py](generateDailyRepory.py) if sendgrid credentials are included in config.ini.
 * In addition to the statisticssummary, an excel workbook with the detailed VSI data will be included.
 * Detailed data such as Image, VLAN, and Datacenter are only available if running _trackProvisioningEvents.py_ periodically to
   collect and store data in the _Cloudant_ database.  This is because this data is only available while the VSI is running
-  and is not stored in the invoice data. Therefore _trackProvisioningEvents_ captures this data and stored in Cloudant for use
+  and is not stored in the invoice data. Therefore [trackProvisioningEvents](trackProvisioningEvents.py) captures this data and stored in Cloudant for use
   when creating the daily report.
 
 ````
