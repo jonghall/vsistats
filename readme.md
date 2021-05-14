@@ -99,7 +99,10 @@ All 		34.0 	10.4 	11.570588 	0.556528 	12.8
 
 
 ````
-###Excel Daily Output Example
+### Excel Daily Output Example
+* Included in the daily email will be an excel file with the detail data used in the statistics.
+* Some data is only available if also running _trackProvisioningEvents.py_ and a _Cloudant_ database to store at provisioning time data
+  .
 ![example-output](example-output.png)
 
 **Links**
