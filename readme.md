@@ -21,13 +21,13 @@ _Cloudant Database and periodic data collection process is only requried if expa
     * View Virtual Host Details
     * View Virtual Dedicated Host Details
     * Manage Public Images
-  * The Userid needs to also have the ability to view all existing and future virtual devices.
-    * "Auto virtual server access" must be checked on permissions.
-* **[sendGrid]** section should contain your IBM Email Delivery powered by SendGrid information
+  * **Userid** needs to also have the ability to view all existing and future virtual devices.
+    * "Auto virtual server access" must be checked on permissions to allow script to read future provsioned VSI data.
+* **[sendGrid]** section should contain your IBM Email Delivery powered by SendGrid credentials.
   * The **apiKey** should contain a valid sendGrid apiKey.
   * The **to** field must contain at least one valid email address.  Multiple email addresses can be separated by a comma.
   * The **Subject** should specify the desired subject line of the nightly report emails.
-* **[cloudant]** section should include your IBM Cloud for Databases Cloudant.  If this section is left blank, the daily report will exclude provisioning statistics based on image or vlan data.
+* **[cloudant]** section should include your IBM Cloud for Databases Cloudant credentials.  If this section is left blank, the daily report will exclude provisioning statistics based on image or vlan data.
   * **username**  The username is the Cloudant instance name. 
   * **password**  The password is the ApiKey.  
 ```bazaar
@@ -51,12 +51,18 @@ because this data is only available while the instance is being provisioned or r
 * The daily report should be run nightly, after 3am eastern time to ensure that it captures all the previous days provisioning events.  If the [Cloudant] section is left blank or
 the trackProvisioningEvents script isn't run regularly the Datacenter and Image Statistics will be blank.
 
-Suggested CRONTAB settings
+### Suggested CRONTAB settings
 ````bazaar
 #!/usr/bin/env bash
 */15 * * * * /directory/trackProvisioningReport.sh >> /var/log/events.log 2>&1
 30 03 * * * /directory/generateDailyReport.sh  >> /var/log/daily.log 2>&1
 ````
+
+### Python Requirements
+* Python 3.8 or newer should be installed on the server which will run scripts.
+* It is recommended that _virtualenv_ be used. (https://virtualenv.pypa.io/en/latest/)
+* _requirements.txt_ contain all the package requirements.  To install ````pip install -r requirements.txt````
+* Adjust directories in the shell scripts to reflect the locations of the scripts.
 
 ### Daily Report Email output sent via IBM Cloud Email Delivery (aka Sendgrid)
 ````
