@@ -428,4 +428,10 @@ if sendEmails == True:
     except Exception as e:
         logging.warning("Email Send Error = %s." % e.to_dict)
 
+    try:
+        os.remove(outputname)
+        logging.warning("%s report file removed after sending." % outputname)
+    except:
+        logging.warning("%s report file cloud not be removed after sending." % outputname)
+
 logging.warning('Finished Daily Provisioning Report Job for %s.' % (datetime.strftime(reportdate, "%m/%d/%Y")))
