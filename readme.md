@@ -6,11 +6,11 @@ for IBM Cloud Classic Virtual Servers (VSIs).
 
 
 **Prereq**
-* IBM Cloud Classic (Aka Softlayer) Username and ApiKey.  User must have access to account billing and virtual server provisioning records (all VSIs must be visible)
-* IBM Cloud Database - Cloudant Multitenant Lite tier instance (https://cloud.ibm.com/catalog/services/cloudant) with IAM ApiKey and instance username with Manager access.
-* Email Delivery, Powered by Sendgrid (https://cloud.ibm.com/catalog/infrastructure/email-delivery) with ApiKey.
-* A compute node to run daily report, and periodic data collection job (every 10 minutes).  Instance does not need to be in same account or even in the IBM Cloud, just needs to have access
-to the SoftLayer API endpoint.
+* IBM Cloud Classic Infrastructure (Aka Softlayer) apiKey and username.  
+* IBM Cloudant Multi-tenant Lite tier instance (https://cloud.ibm.com/catalog/services/cloudant)
+* Email Delivery, Powered by Sendgrid (https://cloud.ibm.com/catalog/infrastructure/email-delivery).
+* A compute node (CentOS or Ubuntu recommended) with Python 3.8+ to run daily reports, and collect periodic provisioning data (every 10 minutes).  Compute Instance does not need to be in same account or even in the IBM Cloud, just needs to have access
+to the SoftLayer API endpoint to collect data.
 
 _Cloudant Database and periodic data collection process is only requried if expanded Datacenter and Image statistics are required._
 
