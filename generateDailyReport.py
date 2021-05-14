@@ -51,8 +51,6 @@ def getDescription(categoryCode, detail):
 ## READ CommandLine Arguments and load configuration file
 ############################################################
 parser = argparse.ArgumentParser(description="Generate report for daily provisioning statistics.")
-parser.add_argument("-u", "--username", help="SoftLayer API Username")
-parser.add_argument("-k", "--apikey", help="SoftLayer APIKEY")
 parser.add_argument("-c", "--config", help="config.ini file to load")
 parser.add_argument("-o", "--output", help="Outputfile")
 parser.add_argument("-d", "--date", help="Date to generate report for.")
@@ -67,17 +65,6 @@ else:
 
 config = configparser.ConfigParser()
 config.read(filename)
-
-# Use username/apikey passed if available, otherwise use config file.
-if args.username != None:
-    username=args.username
-else:
-    username=config['api']['username']
-
-if args.apikey != None:
-    apikey=args.apikey
-else:
-    apikey=config['api']['apikey']
 
 if args.date == None:
     reportdate = datetime.now() - timedelta(days=1)
