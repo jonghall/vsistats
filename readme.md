@@ -59,10 +59,12 @@ the trackProvisioningEvents script isn't run regularly the Datacenter and Image 
 ````
 
 ### Python Requirements
-* Python 3.8 or newer should be installed on the server which will run scripts.
+* Python 3.8 or newer must be installed on the server which will run the scripts.
 * It is recommended that _virtualenv_ be used. (https://virtualenv.pypa.io/en/latest/)
-* _requirements.txt_ contain all the package requirements.  To install ````pip install -r requirements.txt````
-* Adjust directories in the shell scripts to reflect the locations of the scripts.
+  * to create a virtual environment in directory where scripts is installed type ````virtualenv venv````
+  * to activate virtual environment ````source venv/bin/activate````.  Note the shell scripts will activate the environment before execution.
+* [requirements.txt](/requirements.txt) contain all the Python package requirements.  To install packages ````pip install -r requirements.txt````
+* Adjust directories in the shell scripts to reflect the locations of the scripts and virtualenv.
 
 ### Daily Report Email output sent via IBM Cloud Email Delivery (aka Sendgrid)
 ````
@@ -97,19 +99,15 @@ All 		34.0 	10.4 	11.570588 	0.556528 	12.8
 
 
 ````
-Text based Log output
-````
-
-````
-Meta Data Logged with output.  (Power On virtualServer01.Jonathan-Hall-s-Account.cloud)
-````
-
-````
+###Excel Daily Output Example
+![example-output](example-output.png)
 
 **Links**
 SoftLayer Python SDK documentation
 * https://softlayer-api-python-client.readthedocs.io/en/latest/
 
 IBM Classic API's used
-* https://sldn.softlayer.com/reference/services/SoftLayer_Account/getVirtualGuests/
-* https://sldn.softlayer.com/reference/services/SoftLayer_Hardware_Server/
+* https://sldn.softlayer.com/reference/services/SoftLayer_Account/getInvoices/
+* https://sldn.softlayer.com/reference/services/SoftLayer_Account/getHourlyVirtualGuests/
+* https://sldn.softlayer.com/reference/services/SoftLayer_Event_Log/
+
