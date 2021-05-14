@@ -67,9 +67,9 @@ the trackProvisioningEvents script isn't run regularly the Datacenter and Image 
 * Adjust directories in the shell scripts to reflect the locations of the scripts and virtualenv.
 
 ### Daily Report Email output sent via IBM Cloud Email Delivery (aka Sendgrid)
-* A daily email will be sent by [generateDailyReport.py](generateDailyRepory.py) if sendgrid credentials are included in config.ini.
+* A daily email will be sent by [generateDailyReport.py](generateDailyReport.py) if sendgrid credentials are included in config.ini.
 * In addition to the statisticssummary, an excel workbook with the detailed VSI data will be included.
-* Detailed data such as Image, VLAN, and Datacenter are only available if running _trackProvisioningEvents.py_ periodically to
+* Detailed data such as Image, VLAN, and Datacenter are only available if running [trackProvisioningEvents.py](trackProvisioningEvents.py) periodically to
   collect and store data in the _Cloudant_ database.  This is because this data is only available while the VSI is running
   and is not stored in the invoice data. Therefore [trackProvisioningEvents](trackProvisioningEvents.py) captures this data and stored in Cloudant for use
   when creating the daily report.
