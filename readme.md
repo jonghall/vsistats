@@ -15,15 +15,21 @@ to the SoftLayer API endpoint.
 _Cloudant Database and periodic data collection process is only requried if expanded Datacenter and Image statistics are required._
 
 ### Configuration (config.ini)
-*API section should include the IBM Cloud Classic (aka SoftLayer) userid and apikey.   This user must have at least the following Classic Infrastructure permissions.  Additionally user should have
-ability to view all virtual devices and "Auto virtual server access" should be checked.
-** View Audit Log
-** View Virtual Host Details
-** View Virtual Dedicated Host Details
-** Manage Public Images
-*sendGrid section should include your IBM Email Delivery powered by SendGrid apikey, a to field with at least one email address.  Multiple email addresses should be separated by a comma, and the Subject should specify the desired subject line of the nightly report emails.
-* cloudant section should include your Cloudand username and password.   For IAM enabled cloudant databases these are found under credentials.  The username is the Cloudant instance name.  The password is the ApiKey.  If this section is left blank, the daily report will only build statistics for the provisioning times and not capture image or vlan data.
-
+* **[api]** section must include a valid IBM Cloud Classic Infrastructure credentials (aka SoftLayer)
+  * The **userid** and **apikey** must have at least the following Classic Infrastructure permissions.
+    * View Audit Log 
+    * View Virtual Host Details
+    * View Virtual Dedicated Host Details
+    * Manage Public Images
+  * The Userid needs to also have the ability to view all existing and future virtual devices.
+    * "Auto virtual server access" must be checked on permissions.
+* **[sendGrid]** section should contain your IBM Email Delivery powered by SendGrid information
+  * The **apiKey** should contain a valid sendGrid apiKey.
+  * The **to** field must contain at least one valid email address.  Multiple email addresses can be separated by a comma.
+  * The **Subject** should specify the desired subject line of the nightly report emails.
+* **[cloudant]** section should include your IBM Cloud for Databases Cloudant.  If this section is left blank, the daily report will exclude provisioning statistics based on image or vlan data.
+  * **username**  The username is the Cloudant instance name. 
+  * **password**  The password is the ApiKey.  
 ```bazaar
 [api]
 username=<USERNAME>
@@ -38,8 +44,6 @@ subject = 'Daily Provisioning Report'
 username = <cloudant user>
 password = <cloudant apikey>
 
-
-
 ```
 ### Scheduling Scripts to run.
 * If you wish to collect statistics on images and vlan information the script requires a Cloudant instance and the credentials to be included in the [Cloudant] section of config.ini.
@@ -47,7 +51,7 @@ because this data is only available while the instance is being provisioned or r
 * The daily report should be run nightly, after 3am eastern time to ensure that it captures all the previous days provisioning events.  If the [Cloudant] section is left blank or
 the trackProvisioningEvents script isn't run regularly the Datacenter and Image Statistics will be blank.
 
-####Suggested CRONTAB settings
+Suggested CRONTAB settings
 ````bazaar
 #!/usr/bin/env bash
 */15 * * * * /directory/trackProvisioningReport.sh >> /var/log/events.log 2>&1
