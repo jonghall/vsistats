@@ -49,7 +49,7 @@ password = <cloudant apikey>
 * The daily report should be run nightly, after 3am eastern time to ensure that it captures all the previous days provisioning events.  If the [Cloudant] section is left blank or
 the trackProvisioningEvents script isn't run regularly the Datacenter and Image Statistics will be blank.
 * The daily report can be run adhoc by running directly.   ````python generateDailyReport.py --date YYYY/MM/DD````
-* If no date is specified it will default to running the report using the previous date.
+* If no date is specified it will default to running the report using the previous day.
 
 ### Suggested CRONTAB settings
 ````bazaar
@@ -71,7 +71,7 @@ the trackProvisioningEvents script isn't run regularly the Datacenter and Image 
 * In addition to the statisticssummary, an excel workbook with the detailed VSI data will be included.
 * Detailed data such as Image, VLAN, and Datacenter are only available if running [trackProvisioningEvents.py](trackProvisioningEvents.py) periodically to
   collect and store data in the _Cloudant_ database.  This is because this data is only available while the VSI is running
-  and is not stored in the invoice data. Therefore [trackProvisioningEvents](trackProvisioningEvents.py) captures this data and stored in Cloudant for use
+  and is not stored in the invoice data. Therefore [trackProvisioningEvents.py](trackProvisioningEvents.py) captures this data and stored in Cloudant for use
   when creating the daily report.
 
 ````
