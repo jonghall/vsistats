@@ -102,18 +102,21 @@ createExcel = True
 # Notification Variables
 ######################################
 
-if config['sendGrid']['apiKey'] == None:
-    sendEmails = False
-    sendGridApi = ""
-    sendGridTo = []
-    sendGridFrom = ""
-    sendGridSubject = ""
+if 'sendGrid' in config:
+    if config['sendGrid']['apiKey'] == None:
+        sendEmails = False
+        sendGridApi = ""
+        sendGridTo = []
+        sendGridFrom = ""
+        sendGridSubject = ""
+    else:
+        sendEmails = True
+        sendGridApi = config['sendGrid']['apiKey']
+        sendGridTo = config['sendGrid']['to'].split(",")
+        sendGridFrom = config['sendGrid']['from']
+        sendGridSubject = config['sendGrid']['subject']
 else:
-    sendEmails = True
-    sendGridApi = config['sendGrid']['apiKey']
-    sendGridTo = config['sendGrid']['to'].split(",")
-    sendGridFrom = config['sendGrid']['from']
-    sendGridSubject = config['sendGrid']['subject']
+    sendEmails = False
 
 ###########################################################
 # define cloudant database to hold daily results
