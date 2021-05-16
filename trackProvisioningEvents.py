@@ -19,18 +19,8 @@ import SoftLayer, json, configparser, argparse, logging, time, pytz
 from datetime import datetime, timedelta
 from cloudant.client import Cloudant
 
-def convert_timedelta(duration):
-    days, seconds = duration.days, duration.seconds
-    hours = days * 24 + seconds // 3600
-    minutes = (seconds % 3600) // 60
-    seconds = seconds % 60
-    totalminutes = round((days * 1440) + (hours * 60) + minutes + (seconds / 60), 1)
-    return totalminutes
-
-def convert_timestamp(sldate):
-    formatedDate = sldate
-    formatedDate = formatedDate[0:22]+formatedDate[23:26]
-    formatedDate = datetime.strptime(formatedDate, "%Y-%m-%dT%H:%M:%S%z")
+def convertTimestamp(sldate):
+    formatedDate = datetime.fromisoformat(sldate).strftime('%s')
     return formatedDate.astimezone(central)
 
 def getDescription(categoryCode, detail):
@@ -82,7 +72,7 @@ logging.basicConfig( filename='/var/log/events.log', format='%(asctime)s %(messa
 
 try:
     virtualGuests = client['Account'].getHourlyVirtualGuests(
-        mask='id, provisionDate, hostname, maxMemory, maxCpu, fullyQualifiedDomainName, lastTransaction, activeTransaction, activeTransactions,datacenter, datacenter.name,serverRoom, primaryBackendIpAddress, networkVlans, backendRouters,blockDeviceTemplateGroup')
+        mask='id,provisionDate,hostname,datacenter.name,primaryBackendIpAddress,networkVlans,backendRouters,blockDeviceTemplateGroup)
 except SoftLayer.SoftLayerAPIError as e:
     logging.warning("Account::getHourlyVirtualGuests(): %s, %s" % (e.faultCode, e.faultString))
     quit()
@@ -95,22 +85,13 @@ logging.warning('Found %s VirtualGuests.' % (len(virtualGuests)))
 
 for virtualGuest in virtualGuests:
     if virtualGuest['provisionDate'] == "":  ## Null indicates a job being provisioned
-        Id = virtualGuest['id']
-        numTransactions=len(virtualGuest['activeTransactions'])
-        guestId = virtualGuest['activeTransaction']['guestId']
-        createDate = virtualGuest['activeTransactions'][numTransactions-1]['createDate']
-        createDateStamp = convert_timestamp(createDate)
-        currentDateStamp = central.localize(datetime.now())
-        delta = convert_timedelta(currentDateStamp - createDateStamp)
+        guestId = virtualGuest['id']
         hostName = virtualGuest['hostname']
-        fullyQualifiedDomainName = virtualGuest['fullyQualifiedDomainName']
-        maxCpu = virtualGuest['maxCpu']
-        maxMemory = virtualGuest['maxMemory']
 
         if 'blockDeviceTemplateGroup' in virtualGuest:
             templateImage=virtualGuest['blockDeviceTemplateGroup']['name']
         else:
-            templateImage="Stock Image"
+            templateImage=""
 
         if "networkVlans" in virtualGuest:
             if len(virtualGuest['networkVlans'])>0:
@@ -133,25 +114,14 @@ for virtualGuest in virtualGuests:
         else:
             datacenter=""
 
-        if "serverRoom" in virtualGuest:
-            serverRoom=virtualGuest['serverRoom']['longName']
-        else:
-            serverRoom=""
 
         if "primaryBackendIpAddress" in virtualGuest:
             primaryBackendIpAddress=virtualGuest['primaryBackendIpAddress']
         else:
             primaryBackendIpAddress=""
 
-        # Look at active transaction to get stats on current status of provisioning job
-        transactionStatus = virtualGuest['activeTransaction']['transactionStatus']['name']
-        statusDuration = round(virtualGuest['activeTransaction']['elapsedSeconds']/60,1)
-        if 'averageDuration' in virtualGuest['activeTransaction']['transactionStatus']:
-            averageDuration=virtualGuest['activeTransaction']['transactionStatus']['averageDuration']
-        else:
-            averageDuration=1
 
-        logging.warning('VSI %s using %s image behind %s on vlan %s. (delta=%s, duration=%s, request=%s).' % (guestId,templateImage,router, vlan,delta,statusDuration,datetime.strftime(createDateStamp, "%H:%M:%S%z")))
+        logging.warning('VSI %s using %s image behind %s on vlan %s.' % (guestId,templateImage,router,vlan))
 
         #add or update guestId in dictionary for historical view
 
@@ -161,38 +131,25 @@ for virtualGuest in virtualGuests:
                                   "hostName": hostName,
                                   "templateImage": templateImage,
                                   "datacenter": datacenter,
-                                  "serverRoom": serverRoom,
                                   "router": router,
                                   "vlan": vlan,
-                                  "maxMemory": maxMemory,
-                                  "maxCpu": maxCpu,
-                                  "primaryBackendIpAddress": primaryBackendIpAddress,
-                                  "createDateStamp": str(createDateStamp),
-                                  "delta": delta,
-                                  "transactionStatus": transactionStatus,
-                                  "statusDuration": statusDuration}
+                                  "primaryBackendIpAddress": primaryBackendIpAddress
+                                }
 
 
         if cloudant != None:
             time.sleep(1)
             try:
                 doc = vsistatsDb.create_document(provisioning_detail)
-                logging.warning("Wrote new vsi detail record for guestId %s to database." % (docid))
+                logging.warning("Wrote vsi detail record for guestId %s to database." % (docid))
             except:
                 doc = vsistatsDb[docid]
                 doc["hostName"] = hostName
                 doc["templateImage"] = templateImage
                 doc["datacenter"] = datacenter
-                doc["serverRoom"] = serverRoom
                 doc["router"] = router
                 doc["vlan"] =  vlan
-                doc["maxMemory"] = maxMemory
-                doc["maxCpu"] = maxCpu
                 doc["primaryBackendIpAddress"] = primaryBackendIpAddress
-                doc["createDateStamp"] = str(createDateStamp)
-                doc["delta"] = delta
-                doc["transactionStatus"] = transactionStatus
-                doc["statusDuration"] = statusDuration
 
                 try:
                     doc.save()

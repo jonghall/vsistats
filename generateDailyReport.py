@@ -27,7 +27,7 @@ from sendgrid.helpers.mail import (
     Mail, Personalization, Email, Attachment, FileContent, FileName,
     FileType, Disposition, ContentId)
 
-def convert_timedelta(duration):
+def convertTimeDelta(duration):
     days, seconds = duration.days, duration.seconds
     hours = days * 24 + seconds // 3600
     minutes = (seconds % 3600) // 60
@@ -35,10 +35,8 @@ def convert_timedelta(duration):
     totalminutes = round((days * 1440) + (hours * 60) + minutes + (seconds/60),1)
     return totalminutes
 
-def convert_timestamp(sldate):
-    formatedDate = sldate
-    formatedDate = formatedDate[0:22]+formatedDate[-2:]
-    formatedDate = datetime.strptime(formatedDate, "%Y-%m-%dT%H:%M:%S%z")
+def convertTimestamp(sldate):
+    formatedDate = datetime.fromisoformat(sldate).strftime('%s')
     return formatedDate.astimezone(central)
 
 def getDescription(categoryCode, detail):
@@ -122,13 +120,16 @@ else:
 # define cloudant database to hold daily results
 ###########################################################
 
-queryDB = False
 if 'cloudant' in config:
     if config['cloudant']['username'] != None:
         queryDB = True
         cloudant = Cloudant.iam(config['cloudant']['username'], config['cloudant']['password'], connect=True)
         cloudant.connect()
         vsistatsDb = cloudant["vsistats"]
+    else:
+        queryDB = False
+else:
+    queryDB = False
 
 df=pd.DataFrame()
 logging.warning('Getting invoice list for Account from %s.' % (datetime.strftime(reportdate, "%m/%d/%Y")))
@@ -169,14 +170,14 @@ for invoice in InvoiceList:
             time.sleep(5)
 
     invoiceTopLevelItems=invoicedetail['invoiceTopLevelItems']
-    invoiceDate=convert_timestamp(invoicedetail["closedDate"])
+    invoiceDate=convertTimestamp(invoicedetail["closedDate"])
     for item in invoiceTopLevelItems:
         if item['categoryCode']=="guest_core":
             itemId = item['id']
             billingItemId = item['billingItemId']
             location=item['location']['name']
             hostName = item['hostName']+"."+item['domainName']
-            createDateStamp = convert_timestamp(item['createDate'])
+            createDateStamp = convertTimestamp(item['createDate'])
             product=item['description']
             cores=""
 
@@ -212,12 +213,12 @@ for invoice in InvoiceList:
                 provisionTransaction = billingItem['provisionTransaction']
                 provisionId = provisionTransaction['id']
                 guestId = provisionTransaction['guestId']
-                provisionDateStamp = convert_timestamp(provisionTransaction['modifyDate'])
+                provisionDateStamp = convertTimestamp(provisionTransaction['modifyDate'])
             else:
                 provisionTransaction = "0"
                 provisionId = "0"
                 guestId = "0"
-                provisionDateStamp = convert_timestamp(item['createDate'])
+                provisionDateStamp = convertTimestamp(item['createDate'])
 
             eventdate = provisionDateStamp
             powerOnDateStamp = provisionDateStamp
@@ -227,8 +228,7 @@ for invoice in InvoiceList:
             createTime = datetime.strftime(createDateStamp, "%H:%M:%S")
             provisionDate = datetime.strftime(provisionDateStamp, "%Y-%m-%d")
             provisionTime = datetime.strftime(provisionDateStamp, "%H:%M:%S")
-            provisionDelta = convert_timedelta(provisionDateStamp - createDateStamp)
-
+            provisionDelta = convertTimeDelta(provisionDateStamp - createDateStamp)
 
             found=0
             if lookupPowerOn == True:
@@ -260,7 +260,7 @@ for invoice in InvoiceList:
                     powerOnDateStamp=powerOnDateStamp.astimezone(central)
                     powerOnDate=datetime.strftime(powerOnDateStamp,"%Y-%m-%d")
                     powerOnTime=datetime.strftime(powerOnDateStamp,"%H:%M:%S")
-                    powerOnDelta=convert_timedelta(powerOnDateStamp-createDateStamp)
+                    powerOnDelta=convertTimeDelta(powerOnDateStamp - createDateStamp)
                 else:
                     logging.warning('POWERON detail for guestId %s NOT FOUND.' % (guestId))
                     powerOnDate="Not Found"
@@ -281,32 +281,28 @@ for invoice in InvoiceList:
                 try:
                     doc=vsistatsDb[key]
                     logging.warning('VSI detail found in database for %s.' % (key))
-                    serverRoom = doc['serverRoom']
                     router = doc['router']
                     vlan = doc['vlan']
                     primaryBackendIpAddress = doc['primaryBackendIpAddress']
                     templateImage = doc['templateImage']
-                    if templateImage == "no":
-                        templateImage = "Image"
+                    if templateImage == "":
+                        templateImage = "Standard Image"
                 except:
                     logging.warning('Detailed VSI data note found in database for %s.' % (key))
-                    serverRoom =""
                     router =""
                     vlan =""
                     primaryBackendIpAddress =""
-                    templateImage="Image"
+                    templateImage=""
             else:
-                serverRoom = ""
                 router = ""
                 vlan = ""
                 primaryBackendIpAddress = ""
-                templateImage = "Image"
+                templateImage = ""
 
             row = {'InvoiceId': invoiceID,
                    'BillingItemId': billingItemId,
                    'GuestId': guestId,
                    'Datacenter': location,
-                   'ServerRoom': serverRoom,
                    'Router': router,
                    'Vlan': vlan,
                    'IP': primaryBackendIpAddress,
