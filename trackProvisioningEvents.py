@@ -74,7 +74,7 @@ else:
 
 central = pytz.timezone("US/Central")
 today = central.localize(datetime.now())
-logging.basicConfig( filename='events.log', format='%(asctime)s %(message)s', datefmt='%Y-%m-%d %I:%M:%S %p',level=logging.WARNING)
+logging.basicConfig( filename='/var/log/events.log', format='%(asctime)s %(message)s', datefmt='%Y-%m-%d %I:%M:%S %p',level=logging.WARNING)
 
 ########################################
 # Get details on all hourlyVirtualGuests

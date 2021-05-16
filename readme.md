@@ -24,6 +24,7 @@ _Cloudant Database and periodic data collection process is only requried if expa
     * "Auto virtual server access" must be checked on permissions to allow script to read future provsioned VSI data.
 * **[sendGrid]** section should contain your IBM Email Delivery powered by SendGrid credentials.
   * The **apiKey** should contain a valid sendGrid apiKey.
+  * The **from** field must contain one valid email address.
   * The **to** field must contain at least one valid email address.  Multiple email addresses can be separated by a comma.
   * The **Subject** should specify the desired subject line of the nightly report emails.
 * **[cloudant]** section should include your IBM Cloud for Databases Cloudant credentials.  If this section is left blank, the daily report will exclude provisioning statistics based on image or vlan data.
@@ -36,6 +37,7 @@ apikey=<SOFTLAYER APIKEY>
 
 [sendGrid]
 apiKey = <sendgrid API>
+from=email@ibm.com
 to=email1@ibm.com, email2@ibm.com
 subject = 'Daily Provisioning Report'
 

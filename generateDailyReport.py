@@ -17,7 +17,7 @@
 #################################################################################################
 
 
-import time,  SoftLayer, json, configparser, argparse, pytz, logging, base64
+import time,  SoftLayer, configparser, argparse, pytz, logging, base64, os
 import pandas as pd
 import numpy as np
 from cloudant.client import Cloudant
@@ -52,7 +52,6 @@ def getDescription(categoryCode, detail):
 ############################################################
 parser = argparse.ArgumentParser(description="Generate report for daily provisioning statistics.")
 parser.add_argument("-c", "--config", help="config.ini file to load")
-parser.add_argument("-o", "--output", help="Outputfile")
 parser.add_argument("-d", "--date", help="Date to generate report for.")
 
 args = parser.parse_args()
@@ -63,23 +62,21 @@ if args.config != None:
 else:
         filename = "config.ini"
 
-config = configparser.ConfigParser()
-config.read(filename)
-
 if args.date == None:
     reportdate = datetime.now() - timedelta(days=1)
 else:
     reportdate=datetime.strptime(args.date+" 0:0:0","%m/%d/%Y %H:%M:%S")
 
+config = configparser.ConfigParser()
+config.read(filename)
+
+username=config['api']['username']
+apikey=config['api']['apikey']
+
+outputname="daily"+datetime.strftime(reportdate, "%m%d%Y")+".xlsx"
 central = pytz.timezone("US/Central")
 startdate = datetime.strftime(reportdate, "%m/%d/%Y") + " 0:0:0"
 enddate = datetime.strftime(reportdate,"%m/%d/%Y") + " 23:59:59"
-
-if args.output == None:
-    outputname="daily"+datetime.strftime(reportdate, "%m%d%Y")+".xlsx"
-else:
-    outputname=args.output
-
 
 ######################################
 # Connect to SoftLayer API
@@ -90,7 +87,7 @@ client = SoftLayer.Client(username=username, api_key=apikey, timeout=240)
 # Enable Logging
 ######################################
 
-logging.basicConfig(filename='daily.log', format='%(asctime)s %(message)s', datefmt='%Y-%m-%d %I:%M:%S %p',level=logging.WARNING)
+logging.basicConfig(filename='/var/log/daily.log', format='%(asctime)s %(message)s', datefmt='%Y-%m-%d %I:%M:%S %p',level=logging.WARNING)
 
 logging.warning('Running Daily Provisioning Report for %s.' % (datetime.strftime(reportdate, "%m/%d/%Y")))
 
@@ -122,13 +119,13 @@ else:
 # define cloudant database to hold daily results
 ###########################################################
 
-if config['cloudant']['username'] == None:
-    queryDB = False
-else:
-    queryDB = True
-    cloudant = Cloudant.iam(config['cloudant']['username'], config['cloudant']['password'], connect=True)
-    cloudant.connect()
-    vsistatsDb = cloudant["vsistats"]
+queryDB = False
+if 'cloudant' in config:
+    if config['cloudant']['username'] != None:
+        queryDB = True
+        cloudant = Cloudant.iam(config['cloudant']['username'], config['cloudant']['password'], connect=True)
+        cloudant.connect()
+        vsistatsDb = cloudant["vsistats"]
 
 df=pd.DataFrame()
 logging.warning('Getting invoice list for Account from %s.' % (datetime.strftime(reportdate, "%m/%d/%Y")))
@@ -204,7 +201,7 @@ for invoice in InvoiceList:
             filteredAssociatedChildren=billing_detail['filteredAssociatedChildren']
             billingItem=billing_detail['billingItem']
 
-            os=getDescription("os", filteredAssociatedChildren)
+            vsios=getDescription("os", filteredAssociatedChildren)
             memory=getDescription("ram", filteredAssociatedChildren)
             disk=getDescription("guest_disk0", filteredAssociatedChildren)
 
@@ -287,20 +284,20 @@ for invoice in InvoiceList:
                     primaryBackendIpAddress = doc['primaryBackendIpAddress']
                     templateImage = doc['templateImage']
                     if templateImage == "no":
-                        templateImage = "Stock Image"
+                        templateImage = "Image"
                 except:
                     logging.warning('Detailed VSI data note found in database for %s.' % (key))
                     serverRoom =""
                     router =""
                     vlan =""
                     primaryBackendIpAddress =""
-                    templateImage="Unknown Image"
+                    templateImage="Image"
             else:
                 serverRoom = ""
                 router = ""
                 vlan = ""
                 primaryBackendIpAddress = ""
-                templateImage = "Unknown Image"
+                templateImage = "Image"
 
             row = {'InvoiceId': invoiceID,
                    'BillingItemId': billingItemId,
@@ -312,7 +309,7 @@ for invoice in InvoiceList:
                    'IP': primaryBackendIpAddress,
                    'Product': product,
                    'Cores': cores,
-                   'OS': os,
+                   'OS': vsios,
                    'Memory': memory,
                    'Disk': disk,
                    'Image': templateImage,
@@ -407,8 +404,7 @@ if sendEmails == True:
     message.add_personalization(to_list)
 
     if len(InvoiceList) > 0:
-
-        file_path = './'+ outputname
+        file_path = os.path.join("./", outputname)
         with open(file_path, 'rb') as f:
             data = f.read()
             f.close()
@@ -420,7 +416,11 @@ if sendEmails == True:
         attachment.disposition = Disposition('attachment')
         attachment.content_id = ContentId('daily file')
         message.attachment = attachment
-
+        try:
+            os.remove(file_path)
+            logging.warning("%s excel file deleted after sending." % outputname)
+        except OSError as e:
+            logging.warning("%s excel file could not be deleted after sending. (%s)" % (outputname,e))
     try:
         sg = SendGridAPIClient(sendGridApi)
         response = sg.send(message)
@@ -428,10 +428,4 @@ if sendEmails == True:
     except Exception as e:
         logging.warning("Email Send Error = %s." % e.to_dict)
 
-    try:
-        os.remove(outputname)
-        logging.warning("%s report file removed after sending." % outputname)
-    except:
-        logging.warning("%s report file cloud not be removed after sending." % outputname)
-
-logging.warning('Finished Daily Provisioning Report Job for %s.' % (datetime.strftime(reportdate, "%m/%d/%Y")))
+logging.warning('Finished Daily Provisioning Report Job for %s .' % (datetime.strftime(reportdate, "%m/%d/%Y")))
