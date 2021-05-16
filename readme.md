@@ -42,7 +42,6 @@ subject = 'Daily Provisioning Report'
 [cloudant]
 username = <cloudant user>
 password = <cloudant apikey>
-
 ```
 ### Scheduling Scripts to run.
 * If you wish to collect statistics on images used the script must be run periodically (every 15 minutes is recommended).  This data is only available while the instance is active so the script captures and stores the data in the Cloudant database for access when the daily report is run.
