@@ -55,8 +55,8 @@ the trackProvisioningEvents script isn't run the Image Statistics will be missin
 ### Suggested CRONTAB settings
 ````bazaar
 #!/usr/bin/env bash
-*/10 * * * * /directory/trackProvisioningReport.sh >> /var/log/events.log 2>&1
-30 03 * * * /directory/generateDailyReport.sh  >> /var/log/daily.log 2>&1
+*/10 * * * * /directory/trackProvisioningReport.sh >> /dev/null 2>&1
+30 03 * * * /directory/generateDailyReport.sh  >> /dev/null 2>&1
 ````
 
 ### Python Requirements
@@ -94,15 +94,15 @@ NotAllocatedIn30
 
 Provisioning Time Distribution Report
 Total	0to30	31-60	61-90	91-120	121-360	gt360
-34      34      0       0	    0	    0	    0
+34      34      0       0       0       0       0
 
 Datacenter & Image Statistics
 		                        len 	          amin 	            average 	        std 	            amax
 		                        ProvisionedDelta  ProvisionedDelta 	ProvisionedDelta 	ProvisionedDelta 	ProvisionedDelta
 Datacenter 	Image 					
-wdc01 	    SL.AMPB.2012R2.042  31.0 	          10.4 	            11.554839 	        0.589824 	        12.8
-            SL.AMPB.2012R2.0521 3.0 	          11.7 	            11.733333 	        0.057735 	        11.8
-All 		                    34.0 	          10.4 	            11.570588 	        0.556528 	        12.8
+wdc01 	    SL.AMPB.2012R2.042  31.0              10.4              11.554839           0.589824 	        12.8
+            SL.AMPB.2012R2.052  3.0               11.7              11.733333 	        0.057735 	        11.8
+All                             34.0              10.4              11.570588 	        0.556528 	        12.8
 
 
 ````
