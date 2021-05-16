@@ -3,9 +3,7 @@
 These scripts periodically capture VSI data during provisioning, and use it to create a daily report on provisioning
 for IBM Cloud Classic Virtual Servers (VSIs).
 
-
-
-**Prereq**
+###Prereq
 * IBM Cloud Classic Infrastructure (Aka Softlayer) apiKey and username.  
 * IBM Cloudant Multi-tenant Lite tier instance (https://cloud.ibm.com/catalog/services/cloudant)
 * Email Delivery, Powered by Sendgrid (https://cloud.ibm.com/catalog/infrastructure/email-delivery).
@@ -47,11 +45,11 @@ password = <cloudant apikey>
 
 ```
 ### Scheduling Scripts to run.
-* If you wish to collect statistics on images and vlan information the script must be run periodically (every 15 minutes recommended).  This data is only available while the instance is active.   The script stores the data in the Cloudant database for access when the daily report is run.
+* If you wish to collect statistics on images used the script must be run periodically (every 15 minutes is recommended).  This data is only available while the instance is active so the script captures and stores the data in the Cloudant database for access when the daily report is run.
 * The daily report should be run nightly, after 3am eastern time to ensure that it captures all the previous days provisioning events.  If the [Cloudant] section is left blank or
-the trackProvisioningEvents script isn't run regularly the Datacenter and Image Statistics will be blank.
+the trackProvisioningEvents script isn't run regularly the Image Statistics will be missing.
 * The daily report can be run adhoc by running directly.   ````python generateDailyReport.py --date YYYY/MM/DD````
-* If no date is specified it will default to running the report using the previous day.
+* If no date is specified the script will default to running the report using the previous days data.
 
 ### Suggested CRONTAB settings
 ````bazaar
@@ -61,7 +59,7 @@ the trackProvisioningEvents script isn't run regularly the Datacenter and Image 
 ````
 
 ### Python Requirements
-* Python 3.8 or newer must be installed on the server first which will run the scripts.
+* Python 3.8 or newer must be installed on the compute node  which will run the scripts.
 * It is recommended that _virtualenv_ be used. (https://virtualenv.pypa.io/en/latest/)
   * to create a virtual environment in directory where scripts is installed type ````virtualenv venv````
   * to activate virtual environment ````source venv/bin/activate````.  Note the shell scripts will activate the environment before execution.
@@ -70,10 +68,10 @@ the trackProvisioningEvents script isn't run regularly the Datacenter and Image 
 
 ### Daily Report Email output sent via IBM Cloud Email Delivery (aka Sendgrid)
 * A daily email will be sent by [generateDailyReport.py](generateDailyReport.py) if sendgrid credentials are included in config.ini.
-* In addition to the statisticssummary, an excel workbook with the detailed VSI data will be included.
-* Detailed data such as Image, VLAN, and Datacenter are only available if running [trackProvisioningEvents.py](trackProvisioningEvents.py) periodically to
+* In addition to the statistics summary, an excel workbook with the detailed VSI data will be attached to the email.
+* Detailed data such as Image used is only available if running [trackProvisioningEvents.py](trackProvisioningEvents.py) periodically to
   collect and store data in the _Cloudant_ database.  This is because this data is only available while the VSI is running
-  and is not stored in the invoice data. Therefore [trackProvisioningEvents.py](trackProvisioningEvents.py) captures this data and stored in Cloudant for use
+  and is not stored with the invoice data after the VIS is deprovisioned. Therefore [trackProvisioningEvents.py](trackProvisioningEvents.py) is needed to capture image data and stored in Cloudant for use
   when creating the daily report.
 
 ````

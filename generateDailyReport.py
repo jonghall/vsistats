@@ -418,9 +418,9 @@ if sendEmails == True:
         message.attachment = attachment
         try:
             os.remove(file_path)
-            logging.warning("%s excel file deleted after sending." % outputname)
+            logging.warning("%s file successfully deleted." % outputname)
         except OSError as e:
-            logging.warning("%s excel file could not be deleted after sending. (%s)" % (outputname,e))
+            logging.warning("%s could not be deleted. (%s)" % (outputname,e))
     try:
         sg = SendGridAPIClient(sendGridApi)
         response = sg.send(message)
