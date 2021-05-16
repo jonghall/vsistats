@@ -28,6 +28,8 @@ _Cloudant Database and periodic data collection process is only requried if expa
 * **[cloudant]** section should include your IBM Cloud for Databases Cloudant credentials.  If this section is left blank, the daily report will exclude provisioning statistics based on image or vlan data.
   * **username**  The username is the Cloudant instance name. 
   * **password**  The password is the ApiKey.  
+  
+_config.ini_
 ```bazaar
 [api]
 username=<USERNAME>
