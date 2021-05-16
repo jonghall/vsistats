@@ -37,114 +37,101 @@ def setup_logging(
     else:
         logging.basicConfig(level=default_level)
 
+## READ CommandLine Arguments and load configuration file for SoftLayer API & Cloudant Database.
+if __name__ == "__main__":
+    setup_logging()
+    parser = argparse.ArgumentParser(description="Capture and store provisioning data.")
+    parser.add_argument("-c", "--config", help="config.ini file to load")
+    args = parser.parse_args()
 
-## READ CommandLine Arguments and load configuration file
-setup_logging()
-
-parser = argparse.ArgumentParser(description="Capture and store provisioning data.")
-parser.add_argument("-c", "--config", help="config.ini file to load")
-args = parser.parse_args()
-
-
-## READ CONFIGS TO Initialize SoftLayer API and Cloudant
-if args.config != None:
-    filename = args.config
-else:
-    filename = "config.ini"
-
-config = configparser.ConfigParser()
-config.read(filename)
-client = SoftLayer.Client(username=config['api']['username'], api_key=config['api']['apikey'],timeout=240)
-
-
-###########################################################
-# define cloudant database to hold daily results
-###########################################################
-
-if 'cloudant' in config:
-    if config['cloudant']['username'] != None:
-        cloudant = Cloudant.iam(config['cloudant']['username'], config['cloudant']['password'], connect=True)
-        cloudant.connect()
-        vsistatsDb = cloudant["vsistats"]
+    ## READ CONFIGS TO Initialize SoftLayer API and Cloudant
+    if args.config != None:
+        filename = args.config
     else:
-        cloudant = None
-        logging.warning("No cloudant username found in %s." % filename)
-else:
-    cloudant = None
-    logging.warning("No cloudant section found in %s." % filename)
+        filename = "config.ini"
+    config = configparser.ConfigParser()
+    config.read(filename)
+    client = SoftLayer.Client(username=config['api']['username'], api_key=config['api']['apikey'],timeout=240)
 
-########################################
-# Get details on all hourlyVirtualGuests
-########################################
-
-try:
-    virtualGuests = client['Account'].getHourlyVirtualGuests(
-        mask='id,provisionDate,hostname,datacenter.name,primaryBackendIpAddress,networkVlans,backendRouters,blockDeviceTemplateGroup')
-except SoftLayer.SoftLayerAPIError as e:
-    logging.error("Account::getHourlyVirtualGuests(): %s, %s" % (e.faultCode, e.faultString))
-    quit()
-
-logging.info('Found %s VirtualGuests.' % (len(virtualGuests)))
-
-##############################
-# Initiatlize Variables
-#############################
-
-for virtualGuest in virtualGuests:
-    if virtualGuest['provisionDate'] == "":  ## Null indicates a job being provisioned
-        guestId = virtualGuest['id']
-        hostName = virtualGuest['hostname']
-
-        if 'blockDeviceTemplateGroup' in virtualGuest:
-            templateImage=virtualGuest['blockDeviceTemplateGroup']['name']
+    if 'cloudant' in config:
+        if config['cloudant']['username'] != None:
+            cloudant = Cloudant.iam(config['cloudant']['username'], config['cloudant']['password'], connect=True)
+            cloudant.connect()
+            vsistatsDb = cloudant["vsistats"]
         else:
-            templateImage=""
+            logging.error("No cloudant username found in %s.  Quiting." % filename)
+            quit()
+    else:
+        logging.error("No cloudant section found in %s. Quiting." % filename)
+        quit()
 
-        if "networkVlans" in virtualGuest:
-            if len(virtualGuest['networkVlans'])>0:
-                vlan = virtualGuest['networkVlans'][0]['vlanNumber']
+    ########################################
+    # Get details on all hourlyVirtualGuests
+    ########################################
+
+    try:
+        virtualGuests = client['Account'].getHourlyVirtualGuests(
+            mask='id,provisionDate,hostname,datacenter.name,primaryBackendIpAddress,networkVlans,backendRouters,blockDeviceTemplateGroup')
+    except SoftLayer.SoftLayerAPIError as e:
+        logging.error("Account::getHourlyVirtualGuests(): %s, %s" % (e.faultCode, e.faultString))
+        quit()
+
+    logging.info('Found %s VirtualGuests.' % (len(virtualGuests)))
+
+    for virtualGuest in virtualGuests:
+        if virtualGuest['provisionDate'] == "":  ## Null indicates a job being provisioned
+            guestId = virtualGuest['id']
+            hostName = virtualGuest['hostname']
+
+            if 'blockDeviceTemplateGroup' in virtualGuest:
+                templateImage=virtualGuest['blockDeviceTemplateGroup']['name']
             else:
-                vlan = virtualGuest['networkVlans']['vlanNumber']
-        else:
-            vlan=""
+                templateImage=""
 
-        if "backendRouters" in virtualGuest:
-            if len(virtualGuest['backendRouters']) > 1:
-                router=virtualGuest['backendRouters'][0]['hostname']
+            if "networkVlans" in virtualGuest:
+                if len(virtualGuest['networkVlans'])>0:
+                    vlan = virtualGuest['networkVlans'][0]['vlanNumber']
+                else:
+                    vlan = virtualGuest['networkVlans']['vlanNumber']
             else:
-                router = virtualGuest['backendRouters']['hostname']
-        else:
-            router=""
+                vlan=""
 
-        if "datacenter" in virtualGuest:
-            datacenter=virtualGuest['datacenter']['name']
-        else:
-            datacenter=""
+            if "backendRouters" in virtualGuest:
+                if len(virtualGuest['backendRouters']) > 1:
+                    router=virtualGuest['backendRouters'][0]['hostname']
+                else:
+                    router = virtualGuest['backendRouters']['hostname']
+            else:
+                router=""
+
+            if "datacenter" in virtualGuest:
+                datacenter=virtualGuest['datacenter']['name']
+            else:
+                datacenter=""
 
 
-        if "primaryBackendIpAddress" in virtualGuest:
-            primaryBackendIpAddress=virtualGuest['primaryBackendIpAddress']
-        else:
-            primaryBackendIpAddress=""
+            if "primaryBackendIpAddress" in virtualGuest:
+                primaryBackendIpAddress=virtualGuest['primaryBackendIpAddress']
+            else:
+                primaryBackendIpAddress=""
 
 
-        logging.info('VSI %s using %s image behind %s on vlan %s.' % (guestId,templateImage,router,vlan))
+            logging.info('Provisioning VSI %s using %s image behind %s on vlan %s.' % (guestId,templateImage,router,vlan))
 
-        #add or update guestId in dictionary for historical view
+            #add or update guestId in dictionary for use by generateDailyReport.py
 
-        docid=str(guestId)
-        provisioning_detail = {"_id": docid,
-                                  "docType": "vsidata",
-                                  "hostName": hostName,
-                                  "templateImage": templateImage,
-                                  "datacenter": datacenter,
-                                  "router": router,
-                                  "vlan": vlan,
-                                  "primaryBackendIpAddress": primaryBackendIpAddress
-                                }
+            docid=str(guestId)
+            provisioning_detail = {"_id": docid,
+                                      "docType": "vsidata",
+                                      "hostName": hostName,
+                                      "templateImage": templateImage,
+                                      "datacenter": datacenter,
+                                      "router": router,
+                                      "vlan": vlan,
+                                      "primaryBackendIpAddress": primaryBackendIpAddress
+                                    }
 
-        if cloudant != None:
-            time.sleep(1)
+            time.sleep(1) # throttle for lite tier write max limit.
             try:
                 doc = vsistatsDb.create_document(provisioning_detail)
                 logging.info("Wrote vsi detail record for guestId %s to Cloudant database." % (docid))
