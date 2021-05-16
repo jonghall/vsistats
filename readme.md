@@ -94,21 +94,34 @@ NotAllocatedIn30
 
 Provisioning Time Distribution Report
 Total	0to30	31-60	61-90	91-120	121-360	gt360
-34	34	0	0	0	0	0
+34      34      0       0	    0	    0	    0
 
 Datacenter & Image Statistics
-		len 	amin 	average 	std 	amax
-		ProvisionedDelta 	ProvisionedDelta 	ProvisionedDelta 	ProvisionedDelta 	ProvisionedDelta
+		                        len 	          amin 	            average 	        std 	            amax
+		                        ProvisionedDelta  ProvisionedDelta 	ProvisionedDelta 	ProvisionedDelta 	ProvisionedDelta
 Datacenter 	Image 					
-wdc01 	SL.AMPB.2012R2.0421 	31.0 	10.4 	11.554839 	0.589824 	12.8
-SL.AMPB.2012R2.0521 	3.0 	11.7 	11.733333 	0.057735 	11.8
-All 		34.0 	10.4 	11.570588 	0.556528 	12.8
+wdc01 	    SL.AMPB.2012R2.042  31.0 	          10.4 	            11.554839 	        0.589824 	        12.8
+            SL.AMPB.2012R2.0521 3.0 	          11.7 	            11.733333 	        0.057735 	        11.8
+All 		                    34.0 	          10.4 	            11.570588 	        0.556528 	        12.8
 
 
 ````
 ### Excel Daily Output Example
 
 ![example-output](example-output.png)
+
+### Logging
+* [logging.json](logging.json) can be modified to suite logging needs for both scripts
+* Both scripts log all informational status messages as INFO, unexpected results as WARN, and errors as ERRORS.
+
+````
+[2021-05-16 12:08:07,457] INFO [generateDailyReport.py:345] Generating Statistics and formating email message.
+[2021-05-16 12:08:07,551] INFO [generateDailyReport.py:387] Creating Excel File.
+[2021-05-16 12:08:07,594] INFO [generateDailyReport.py:404] Sending report via email.
+[2021-05-16 12:08:07,595] INFO [generateDailyReport.py:433] daily05152021.xlsx file successfully deleted.
+[2021-05-16 12:08:08,081] INFO [generateDailyReport.py:439] Email Send status code = 202.
+[2021-05-16 12:08:08,081] INFO [generateDailyReport.py:443] Finished Daily Provisioning Report Job for 05/15/2021.
+````
 
 **Links**
 SoftLayer Python SDK documentation
