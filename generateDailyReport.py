@@ -17,7 +17,7 @@
 #################################################################################################
 
 
-import time,  SoftLayer, configparser, argparse, pytz, logging, base64, os
+import time,  SoftLayer, configparser, argparse, pytz, logging, logging.config, base64, os, json
 import pandas as pd
 import numpy as np
 from cloudant.client import Cloudant
@@ -45,9 +45,29 @@ def getDescription(categoryCode, detail):
             return item['description']
     return "Not Found"
 
+def setup_logging(
+    default_path='logging.json',
+    default_level=logging.INFO,
+    env_key='LOG_CFG'):
+
+    path = default_path
+    value = os.getenv(env_key, None)
+    if value:
+        path = value
+    if os.path.exists(path):
+        with open(path, 'rt') as f:
+            config = json.load(f)
+        if "handlers" in config:
+            if "logdna" in config["handlers"]:
+                config["handlers"]["logdna"]["key"] = os.getenv("logdna_ingest_key")
+        logging.config.dictConfig(config)
+    else:
+        logging.basicConfig(level=default_level)
+
 ############################################################
 ## READ CommandLine Arguments and load configuration file
 ############################################################
+setup_logging()
 parser = argparse.ArgumentParser(description="Generate report for daily provisioning statistics.")
 parser.add_argument("-c", "--config", help="config.ini file to load")
 parser.add_argument("-d", "--date", help="Date to generate report for.")
@@ -85,10 +105,7 @@ client = SoftLayer.Client(username=username, api_key=apikey, timeout=240)
 # Enable Logging
 ######################################
 
-logging.basicConfig(filename='/var/log/daily.log', format='%(asctime)s %(message)s', datefmt='%Y-%m-%d %I:%M:%S %p',level=logging.WARNING)
-
-logging.warning('Running Daily Provisioning Report for %s.' % (datetime.strftime(reportdate, "%m/%d/%Y")))
-
+logging.info('Running Daily Provisioning Report for %s.' % (datetime.strftime(reportdate, "%m/%d/%Y")))
 
 ######################################
 # set Script Behavior Flags
@@ -132,7 +149,7 @@ else:
     queryDB = False
 
 df=pd.DataFrame()
-logging.warning('Getting invoice list for Account from %s.' % (datetime.strftime(reportdate, "%m/%d/%Y")))
+logging.info('Getting invoice list for Account from %s.' % (datetime.strftime(reportdate, "%m/%d/%Y")))
 InvoiceList=""
 while InvoiceList == "":
     try:
@@ -154,19 +171,19 @@ while InvoiceList == "":
                 }
             })
     except SoftLayer.SoftLayerAPIError as e:
-        logging.warning("Account::getInvoices: %s, %s" % (e.faultCode, e.faultString))
+        logging.error("Account::getInvoices: %s, %s" % (e.faultCode, e.faultString))
         df = pd.DataFrame()
 
 for invoice in InvoiceList:
     invoiceID = invoice['id']
     invoicedetail=""
-    logging.warning('Looking up InvoiceId %s.' % (invoiceID))
+    logging.info('Looking up InvoiceId %s.' % (invoiceID))
     while invoicedetail == "":
         try:
             time.sleep(1)
             invoicedetail = client['Billing_Invoice'].getObject(id=invoiceID, mask="closedDate, invoiceTopLevelItems, invoiceTopLevelItems.product,invoiceTopLevelItems.location")
         except SoftLayer.SoftLayerAPIError as e:
-            logging.warning("Billing_Invoice::getObject: %s, %s" % (e.faultCode, e.faultString))
+            logging.error("Billing_Invoice::getObject: %s, %s" % (e.faultCode, e.faultString))
             time.sleep(5)
 
     invoiceTopLevelItems=invoicedetail['invoiceTopLevelItems']
@@ -186,7 +203,7 @@ for invoice in InvoiceList:
                 cores=item['product']['totalPhysicalCoreCount']
 
             billing_detail=""
-            logging.warning('Looking up billing Invoice Detail for %s.' % (itemId))
+            logging.info('Looking up billing Invoice Detail for %s.' % (itemId))
 
             while billing_detail == "":
                 try:
@@ -198,7 +215,7 @@ for invoice in InvoiceList:
                                                                                    "billingItem.cancellationDate, " \
                                                                                    "billingItem.provisionTransaction")
                 except SoftLayer.SoftLayerAPIError as e:
-                    logging.warning("Billing_Invoice_Item::getObject(%s): %s, %s" % (itemId,e.faultCode, e.faultString))
+                    logging.error("Billing_Invoice_Item::getObject(%s): %s, %s" % (itemId,e.faultCode, e.faultString))
                     time.sleep(5)
 
 
@@ -232,7 +249,7 @@ for invoice in InvoiceList:
 
             found=0
             if lookupPowerOn == True:
-                logging.warning('Searching event Log for POWERON detail for guestId %s.' % (guestId))
+                logging.info('Searching event Log for POWERON detail for guestId %s.' % (guestId))
                 # GET OLDEST POWERON EVENT FROM EVENTLOG FOR GUESTID AS INITIAL RESOURCE ALLOCATION TIMESTAMP
 
                 events=""
@@ -242,7 +259,7 @@ for invoice in InvoiceList:
                                                             'eventName': {'operation': 'Power On'},
                                                             'objectId': {'operation': guestId}})
                 except SoftLayer.SoftLayerAPIError as e:
-                    logging.warning("Event_Log::getAllObjects: %s, %s" % (e.faultCode, e.faultString))
+                    logging.error("Event_Log::getAllObjects: %s, %s" % (e.faultCode, e.faultString))
 
                 for event in events:
                     if event['eventName']=="Power On":
@@ -253,10 +270,9 @@ for invoice in InvoiceList:
                             powerOnDateStamp = eventdate
                             found=1
 
-
                 # Calculate poweron if found
                 if found==1:
-                    logging.warning('POWERON detail for guestId %s FOUND.' % (guestId))
+                    logging.info('POWERON detail for guestId %s FOUND.' % (guestId))
                     powerOnDateStamp=powerOnDateStamp.astimezone(central)
                     powerOnDate=datetime.strftime(powerOnDateStamp,"%Y-%m-%d")
                     powerOnTime=datetime.strftime(powerOnDateStamp,"%H:%M:%S")
@@ -280,13 +296,13 @@ for invoice in InvoiceList:
             if queryDB == True:
                 try:
                     doc=vsistatsDb[key]
-                    logging.warning('VSI detail found in database for %s.' % (key))
+                    logging.info('VSI detail found in database for %s.' % (key))
                     router = doc['router']
                     vlan = doc['vlan']
                     primaryBackendIpAddress = doc['primaryBackendIpAddress']
                     templateImage = doc['templateImage']
                 except:
-                    logging.warning('Detailed VSI data note found in database for %s.' % (key))
+                    logging.warning('Detailed VSI data not found in database for %s.' % (key))
                     router =""
                     vlan =""
                     primaryBackendIpAddress =""
@@ -326,7 +342,7 @@ if len(InvoiceList)>0:
     ########################################################
     ## Generate Statisitics & Create HTML for message
     #########################################################
-    logging.warning("Generating Statistics and formating email message.")
+    logging.info("Generating Statistics and formating email message.")
     header_html = ("<p><center><b>Provisioning Statistics for %s</b></center></br></p>" % ((datetime.strftime(reportdate, "%m/%d/%Y"))))
 
     ########################################################
@@ -351,7 +367,6 @@ if len(InvoiceList)>0:
     distribution120=len(df[df.ProvisionedDelta.between(121,360.99,inclusive=True)])
     distribution360=len(df[df.ProvisionedDelta.between(361,999999,inclusive=True)])
 
-
     noalloc_html = ('<p><b>SLA Report</b></br><table width="100" border="1" class="dataframe"><tr>' \
                '<th>NotAllocatedIn30</th></tr><tr><td style="text-align: center;">%s</td></tr></table></p>' % (notAllocated))
 
@@ -369,7 +384,7 @@ if len(InvoiceList)>0:
     ##########################################
 
     if createExcel == True:
-        logging.warning("Creating Excel File.")
+        logging.info("Creating Excel File.")
         writer = pd.ExcelWriter(outputname, engine='xlsxwriter')
         df.to_excel(writer,'Detail')
         imagePivot.to_excel(writer,'Image_Pivot')
@@ -386,7 +401,7 @@ else:
 # FORMAT & SEND EMAIL VIA SENDGRID ACCOUNT
 ##########################################
 if sendEmails == True:
-    logging.warning("Sending report via email.")
+    logging.info("Sending report via email.")
 
     to_list = Personalization()
     for email in sendGridTo:
@@ -415,14 +430,14 @@ if sendEmails == True:
         message.attachment = attachment
         try:
             os.remove(file_path)
-            logging.warning("%s file successfully deleted." % outputname)
+            logging.info("%s file successfully deleted." % outputname)
         except OSError as e:
-            logging.warning("%s could not be deleted. (%s)" % (outputname,e))
+            logging.error("%s could not be deleted. (%s)" % (outputname,e))
     try:
         sg = SendGridAPIClient(sendGridApi)
         response = sg.send(message)
-        logging.warning("Email Send status code = %s." % response.status_code)
+        logging.info("Email Send status code = %s." % response.status_code)
     except Exception as e:
-        logging.warning("Email Send Error = %s." % e.to_dict)
+        logging.error("Email Send Error = %s." % e.to_dict)
 
-logging.warning('Finished Daily Provisioning Report Job for %s .' % (datetime.strftime(reportdate, "%m/%d/%Y")))
+logging.info('Finished Daily Provisioning Report Job for %s.' % (datetime.strftime(reportdate, "%m/%d/%Y")))

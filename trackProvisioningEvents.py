@@ -15,7 +15,7 @@
 #
 #################################################################################################
 
-import SoftLayer, json, configparser, argparse, logging, time, pytz
+import SoftLayer, json, configparser, argparse, logging, logging.config, time, pytz, os
 from datetime import datetime, timedelta
 from cloudant.client import Cloudant
 
@@ -29,7 +29,29 @@ def getDescription(categoryCode, detail):
             return item['description']
     return "Not Found"
 
+def setup_logging(
+    default_path='logging.json',
+    default_level=logging.INFO,
+    env_key='LOG_CFG'):
+
+    path = default_path
+    value = os.getenv(env_key, None)
+    if value:
+        path = value
+    if os.path.exists(path):
+        with open(path, 'rt') as f:
+            config = json.load(f)
+        if "handlers" in config:
+            if "logdna" in config["handlers"]:
+                config["handlers"]["logdna"]["key"] = os.getenv("logdna_ingest_key")
+        logging.config.dictConfig(config)
+    else:
+        logging.basicConfig(level=default_level)
+
+
 ## READ CommandLine Arguments and load configuration file
+setup_logging()
+
 parser = argparse.ArgumentParser(description="Check Audit Log for VSI.")
 parser.add_argument("-u", "--username", help="SoftLayer API Username")
 parser.add_argument("-k", "--apikey", help="SoftLayer APIKEY")
@@ -38,7 +60,6 @@ args = parser.parse_args()
 
 
 ## READ CONFIGS TO Initialize SoftLayer API and Cloudant
-
 if args.username == None and args.apikey == None:
     if args.config != None:
         filename = args.config
@@ -54,17 +75,20 @@ else:
 # define cloudant database to hold daily results
 ###########################################################
 
-if config['cloudant']['username'] != None:
-    cloudant = Cloudant.iam(config['cloudant']['username'], config['cloudant']['password'], connect=True)
-    cloudant.connect()
-    vsistatsDb = cloudant["vsistats"]
+if 'cloudant' in config:
+    if config['cloudant']['username'] != None:
+        cloudant = Cloudant.iam(config['cloudant']['username'], config['cloudant']['password'], connect=True)
+        cloudant.connect()
+        vsistatsDb = cloudant["vsistats"]
+    else:
+        cloudant = None
+        logging.warning("No cloudant username found in %s." % filename)
 else:
     cloudant = None
-
+    logging.warning("No cloudant section found in %s." % filename)
 
 central = pytz.timezone("US/Central")
 today = central.localize(datetime.now())
-logging.basicConfig( filename='/var/log/events.log', format='%(asctime)s %(message)s', datefmt='%Y-%m-%d %I:%M:%S %p',level=logging.WARNING)
 
 ########################################
 # Get details on all hourlyVirtualGuests
@@ -74,10 +98,10 @@ try:
     virtualGuests = client['Account'].getHourlyVirtualGuests(
         mask='id,provisionDate,hostname,datacenter.name,primaryBackendIpAddress,networkVlans,backendRouters,blockDeviceTemplateGroup')
 except SoftLayer.SoftLayerAPIError as e:
-    logging.warning("Account::getHourlyVirtualGuests(): %s, %s" % (e.faultCode, e.faultString))
+    logging.error("Account::getHourlyVirtualGuests(): %s, %s" % (e.faultCode, e.faultString))
     quit()
 
-logging.warning('Found %s VirtualGuests.' % (len(virtualGuests)))
+logging.info('Found %s VirtualGuests.' % (len(virtualGuests)))
 
 ##############################
 # Initiatlize Variables
@@ -121,7 +145,7 @@ for virtualGuest in virtualGuests:
             primaryBackendIpAddress=""
 
 
-        logging.warning('VSI %s using %s image behind %s on vlan %s.' % (guestId,templateImage,router,vlan))
+        logging.info('VSI %s using %s image behind %s on vlan %s.' % (guestId,templateImage,router,vlan))
 
         #add or update guestId in dictionary for historical view
 
@@ -141,7 +165,7 @@ for virtualGuest in virtualGuests:
             time.sleep(1)
             try:
                 doc = vsistatsDb.create_document(provisioning_detail)
-                logging.warning("Wrote vsi detail record for guestId %s to database." % (docid))
+                logging.info("Wrote vsi detail record for guestId %s to database." % (docid))
             except:
                 doc = vsistatsDb[docid]
                 doc["hostName"] = hostName
@@ -153,6 +177,6 @@ for virtualGuest in virtualGuests:
 
                 try:
                     doc.save()
-                    logging.warning("Updating vsi detail record for guestId %s in database." % (docid))
+                    logging.info("Updating vsi detail record for guestId %s in database." % (docid))
                 except:
-                    logging.warning("Error adding detail record for guestId %s in database." % (docid))
+                    logging.error("Error adding detail record for guestId %s in database." % (docid))
