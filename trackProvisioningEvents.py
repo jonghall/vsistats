@@ -15,19 +15,8 @@
 #
 #################################################################################################
 
-import SoftLayer, json, configparser, argparse, logging, logging.config, time, pytz, os
-from datetime import datetime, timedelta
+import SoftLayer, json, configparser, argparse, logging, logging.config, os
 from cloudant.client import Cloudant
-
-def convertTimestamp(sldate):
-    formatedDate = datetime.fromisoformat(sldate).strftime('%s')
-    return formatedDate.astimezone(central)
-
-def getDescription(categoryCode, detail):
-    for item in detail:
-        if item['categoryCode'] == categoryCode:
-            return item['description']
-    return "Not Found"
 
 def setup_logging(
     default_path='logging.json',
@@ -52,24 +41,21 @@ def setup_logging(
 ## READ CommandLine Arguments and load configuration file
 setup_logging()
 
-parser = argparse.ArgumentParser(description="Check Audit Log for VSI.")
-parser.add_argument("-u", "--username", help="SoftLayer API Username")
-parser.add_argument("-k", "--apikey", help="SoftLayer APIKEY")
+parser = argparse.ArgumentParser(description="Capture and store provisioning data.")
 parser.add_argument("-c", "--config", help="config.ini file to load")
 args = parser.parse_args()
 
 
 ## READ CONFIGS TO Initialize SoftLayer API and Cloudant
-if args.username == None and args.apikey == None:
-    if args.config != None:
-        filename = args.config
-    else:
-        filename = "config.ini"
-    config = configparser.ConfigParser()
-    config.read(filename)
-    client = SoftLayer.Client(username=config['api']['username'], api_key=config['api']['apikey'],timeout=240)
+if args.config != None:
+    filename = args.config
 else:
-    client = SoftLayer.Client(username=args.username, api_key=args.apikey,timeout=240)
+    filename = "config.ini"
+
+config = configparser.ConfigParser()
+config.read(filename)
+client = SoftLayer.Client(username=config['api']['username'], api_key=config['api']['apikey'],timeout=240)
+
 
 ###########################################################
 # define cloudant database to hold daily results
@@ -86,9 +72,6 @@ if 'cloudant' in config:
 else:
     cloudant = None
     logging.warning("No cloudant section found in %s." % filename)
-
-central = pytz.timezone("US/Central")
-today = central.localize(datetime.now())
 
 ########################################
 # Get details on all hourlyVirtualGuests
@@ -160,23 +143,10 @@ for virtualGuest in virtualGuests:
                                   "primaryBackendIpAddress": primaryBackendIpAddress
                                 }
 
-
         if cloudant != None:
             time.sleep(1)
             try:
                 doc = vsistatsDb.create_document(provisioning_detail)
-                logging.info("Wrote vsi detail record for guestId %s to database." % (docid))
+                logging.info("Wrote vsi detail record for guestId %s to Cloudant database." % (docid))
             except:
-                doc = vsistatsDb[docid]
-                doc["hostName"] = hostName
-                doc["templateImage"] = templateImage
-                doc["datacenter"] = datacenter
-                doc["router"] = router
-                doc["vlan"] =  vlan
-                doc["primaryBackendIpAddress"] = primaryBackendIpAddress
-
-                try:
-                    doc.save()
-                    logging.info("Updating vsi detail record for guestId %s in database." % (docid))
-                except:
-                    logging.error("Error adding detail record for guestId %s in database." % (docid))
+                logging.error("Error saving vsi detail record for guestId %s to Cloudant database. [%s]" % (docid, provisioning_detail))
