@@ -3,7 +3,7 @@
 These scripts periodically capture VSI data during provisioning, and use it to create a daily report on provisioning
 for IBM Cloud Classic Virtual Servers (VSIs).
 
-###Prereq
+### Prereqs
 * IBM Cloud Classic Infrastructure (Aka Softlayer) apiKey and username.  
 * IBM Cloudant Multi-tenant Lite tier instance (https://cloud.ibm.com/catalog/services/cloudant)
 * Email Delivery, Powered by Sendgrid (https://cloud.ibm.com/catalog/infrastructure/email-delivery).
@@ -29,7 +29,7 @@ _Cloudant Database and periodic data collection process is only requried if expa
   * **username**  The username is the Cloudant instance name. 
   * **password**  The password is the ApiKey.  
   
-_config.ini_
+[config.ini](sample.ini)
 ```bazaar
 [api]
 username=<USERNAME>
