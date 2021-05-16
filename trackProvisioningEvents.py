@@ -72,7 +72,7 @@ logging.basicConfig( filename='/var/log/events.log', format='%(asctime)s %(messa
 
 try:
     virtualGuests = client['Account'].getHourlyVirtualGuests(
-        mask='id,provisionDate,hostname,datacenter.name,primaryBackendIpAddress,networkVlans,backendRouters,blockDeviceTemplateGroup)
+        mask='id,provisionDate,hostname,datacenter.name,primaryBackendIpAddress,networkVlans,backendRouters,blockDeviceTemplateGroup')
 except SoftLayer.SoftLayerAPIError as e:
     logging.warning("Account::getHourlyVirtualGuests(): %s, %s" % (e.faultCode, e.faultString))
     quit()

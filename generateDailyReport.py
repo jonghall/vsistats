@@ -36,7 +36,7 @@ def convertTimeDelta(duration):
     return totalminutes
 
 def convertTimestamp(sldate):
-    formatedDate = datetime.fromisoformat(sldate).strftime('%s')
+    formatedDate = datetime.fromisoformat(sldate)
     return formatedDate.astimezone(central)
 
 def getDescription(categoryCode, detail):
@@ -285,8 +285,6 @@ for invoice in InvoiceList:
                     vlan = doc['vlan']
                     primaryBackendIpAddress = doc['primaryBackendIpAddress']
                     templateImage = doc['templateImage']
-                    if templateImage == "":
-                        templateImage = "Standard Image"
                 except:
                     logging.warning('Detailed VSI data note found in database for %s.' % (key))
                     router =""

@@ -25,7 +25,7 @@ _Cloudant Database and periodic data collection process is only requried if expa
   * The **from** field must contain one valid email address.
   * The **to** field must contain at least one valid email address.  Multiple email addresses can be separated by a comma.
   * The **Subject** should specify the desired subject line of the nightly report emails.
-* **[cloudant]** section should include your IBM Cloud for Databases Cloudant credentials.  If this section is left blank, the daily report will exclude provisioning statistics based on image template data.
+* **[cloudant]** section should include your IBM Cloud for Databases Cloudant credentials.  If this section is left blank, the daily report will exclude provisioning statistics based on image template data and some columns in the excel file will be blank.
   * **username**  The username is the Cloudant instance name. 
   * **password**  The password is the ApiKey.  
   
