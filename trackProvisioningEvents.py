@@ -15,7 +15,7 @@
 #
 #################################################################################################
 
-import SoftLayer, json, configparser, argparse, logging, logging.config, os
+import SoftLayer, json, configparser, argparse, logging, logging.config, os, time
 from cloudant.client import Cloudant
 
 def setup_logging(
@@ -119,7 +119,7 @@ if __name__ == "__main__":
             logging.info('Provisioning VSI %s using %s image behind %s on vlan %s.' % (guestId,templateImage,router,vlan))
 
             #add or update guestId in dictionary for use by generateDailyReport.py
-
+            time.sleep(1)  # throttle for lite tier write max limit.
             docid=str(guestId)
             provisioning_detail = {"_id": docid,
                                       "docType": "vsidata",
@@ -130,8 +130,6 @@ if __name__ == "__main__":
                                       "vlan": vlan,
                                       "primaryBackendIpAddress": primaryBackendIpAddress
                                     }
-
-            time.sleep(1) # throttle for lite tier write max limit.
             try:
                 doc = vsistatsDb.create_document(provisioning_detail)
                 logging.info("Wrote vsi detail record for guestId %s to Cloudant database." % (docid))
