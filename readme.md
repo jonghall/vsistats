@@ -4,30 +4,27 @@ These scripts periodically capture data from hourly VSIs for IBM Cloud Classic I
 and use it to create a daily report on provisioning times for the previous day.
 
 ### Prereqs
-* IBM Cloud Classic Infrastructure (Aka Softlayer) apiKey and username.  
-* IBM Cloudant Multi-tenant Lite Tier instance (https://cloud.ibm.com/catalog/services/cloudant)
+* IBM Cloud Classic Infrastructure (Aka Softlayer) apiKey and username.
 * Email Delivery, Powered by Sendgrid (https://cloud.ibm.com/catalog/infrastructure/email-delivery).
-* A compute node (CentOS or Ubuntu recommended) with Python 3.8+ to run daily reports, and collect periodic provisioning data.  Compute Instance does not need to be in same account or even in the IBM Cloud, just needs to have access to the public SoftLayer API endpoint to collect data.
+* IBM Code Engine instance to run daily report.  Code Engine does not need to be in same account as report is run against.
 
 _Cloudant Database and periodic data collection process is only requried if expanded Datacenter and Image statistics are required._
 
-### Configuration (config.ini)
+### Environment Variables / Secrets 
 * **[api]** section must include a valid IBM Cloud Classic Infrastructure credentials (aka SoftLayer)
-  * The **userid** and **apikey** must have at least the following Classic Infrastructure permissions.
+  * sl_username** and **sl_apikey** must have at least the following Classic Infrastructure permissions.
     * View Audit Log 
     * View Virtual Host Details
     * View Virtual Dedicated Host Details
     * Manage Public Images
-  * **Userid** needs to also have the ability to view all existing and future virtual devices.
+  * **sl_username** needs to also have the ability to view all existing and future virtual devices.
     * "Auto virtual server access" must be checked on permissions to allow script to read future provsioned VSI data.
 * **[sendGrid]** section should contain your IBM Email Delivery powered by SendGrid credentials.
-  * The **apiKey** should contain a valid sendGrid apiKey.
-  * The **from** field must contain one valid email address.
-  * The **to** field must contain at least one valid email address.  Multiple email addresses can be separated by a comma.
-  * The **Subject** should specify the desired subject line of the nightly report emails.
-* **[cloudant]** section should include your IBM Cloud for Databases Cloudant credentials.  If this section is left blank, the daily report will exclude provisioning statistics based on image template data and some columns in the excel file will be blank.
-  * **username**  The username is the Cloudant instance name. 
-  * **password**  The password is the ApiKey.  
+  * The **sendgrid_apikey** should contain a valid sendGrid apiKey.
+  * The **sendgrid_from** field must contain one valid email address.
+  * The **sendgrid_to** field must contain at least one valid email address.  Multiple email addresses can be separated by a comma.
+  * The **sendgrid_subject** should specify the desired subject line of the nightly report emails.
+
   
 [config.ini](sample.ini)
 ```bazaar

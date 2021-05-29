@@ -17,10 +17,9 @@
 #################################################################################################
 
 
-import time,  SoftLayer, configparser, argparse, pytz, logging, logging.config, base64, os, json
+import time,  SoftLayer, argparse, pytz, logging, logging.config, base64, os, json
 import pandas as pd
 import numpy as np
-from cloudant.client import Cloudant
 from datetime import datetime, timedelta, tzinfo
 from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import (
@@ -70,27 +69,17 @@ def setup_logging(
 if __name__ == "__main__":
     setup_logging()
     parser = argparse.ArgumentParser(description="Generate report for daily provisioning statistics.")
-    parser.add_argument("-c", "--config", help="File to load configuration from.")
     parser.add_argument("-d", "--date", help="Date to generate report for (mm/dd/yyyy).")
 
     args = parser.parse_args()
-
-    # Read Config File
-    if args.config != None:
-            filename = args.config
-    else:
-            filename = "config.ini"
 
     if args.date == None:
         reportdate = datetime.now() - timedelta(days=1)
     else:
         reportdate=datetime.strptime(args.date+" 0:0:0","%m/%d/%Y %H:%M:%S")
 
-    config = configparser.ConfigParser()
-    config.read(filename)
-
-    username=config['api']['username']
-    apikey=config['api']['apikey']
+    username=os.environ['sl_username']
+    apikey=os.environ['sl_apikey']
 
     outputname="daily"+datetime.strftime(reportdate, "%m%d%Y")+".xlsx"
     central = pytz.timezone("US/Central")
@@ -113,36 +102,14 @@ if __name__ == "__main__":
     # Notification Variables
     ######################################
 
-    if 'sendGrid' in config:
-        if config['sendGrid']['apiKey'] == None:
-            sendEmails = False
-            sendGridApi = ""
-            sendGridTo = []
-            sendGridFrom = ""
-            sendGridSubject = ""
-        else:
-            sendEmails = True
-            sendGridApi = config['sendGrid']['apiKey']
-            sendGridTo = config['sendGrid']['to'].split(",")
-            sendGridFrom = config['sendGrid']['from']
-            sendGridSubject = config['sendGrid']['subject']
-    else:
-        sendEmails = False
 
-    ###########################################################
-    # define cloudant database to hold daily results
-    ###########################################################
+    sendEmails = True
+    sendGridApi = os.environ['sendgrid_apiKey']
+    sendGridTo = os.environ['sendgrid_to'].split(",")
+    sendGridFrom = os.environ['sendgrid_from']
+    sendGridSubject = os_environ['sendgrid_subject']
 
-    if 'cloudant' in config:
-        if config['cloudant']['username'] != None:
-            queryDB = True
-            cloudant = Cloudant.iam(config['cloudant']['username'], config['cloudant']['password'], connect=True)
-            cloudant.connect()
-            vsistatsDb = cloudant["vsistats"]
-        else:
-            queryDB = False
-    else:
-        queryDB = False
+
 
     df=pd.DataFrame()
     logging.info('Getting invoice list for Account from %s.' % (datetime.strftime(reportdate, "%m/%d/%Y")))
@@ -287,41 +254,16 @@ if __name__ == "__main__":
                 ######################################
                 # Get VSI detail from Cloudant database
                 ######################################
-                key = str(guestId)
-
-                if queryDB == True:
-                    try:
-                        doc=vsistatsDb[key]
-                        logging.info('VSI detail found in database for %s.' % (key))
-                        router = doc['router']
-                        vlan = doc['vlan']
-                        primaryBackendIpAddress = doc['primaryBackendIpAddress']
-                        templateImage = doc['templateImage']
-                    except:
-                        logging.warning('Detailed VSI data not found in database for %s.' % (key))
-                        router =""
-                        vlan =""
-                        primaryBackendIpAddress =""
-                        templateImage=""
-                else:
-                    router = ""
-                    vlan = ""
-                    primaryBackendIpAddress = ""
-                    templateImage = ""
 
                 row = {'InvoiceId': invoiceID,
                        'BillingItemId': billingItemId,
                        'GuestId': guestId,
                        'Datacenter': location,
-                       'Router': router,
-                       'Vlan': vlan,
-                       'IP': primaryBackendIpAddress,
                        'Product': product,
                        'Cores': cores,
                        'OS': vsios,
                        'Memory': memory,
                        'Disk': disk,
-                       'Image': templateImage,
                        'Hostname': hostName,
                        'CreateDate': createDate,
                        'CreateTime': createTime,
@@ -350,8 +292,8 @@ if __name__ == "__main__":
         ########################################################
         # Create Pivot Table for Datacenter & Image Statistiics
         ########################################################
-        imagePivot = pd.pivot_table(df,index=['Datacenter', 'Image'], values='ProvisionedDelta', aggfunc=[len, np.min, np.average, np.std, np.max],margins=True)
-        imagePivot_html= "<p><b>Datacenter & Image Statistics</b></br>"+imagePivot.to_html()+"</p>"
+        imagePivot = pd.pivot_table(df,index=['Datacenter'], values='ProvisionedDelta', aggfunc=[len, np.min, np.average, np.std, np.max],margins=True)
+        imagePivot_html= "<p><b>Datacenter Statistics</b></br>"+imagePivot.to_html()+"</p>"
 
         # Create Time Distribution
         provisionRequests=len(df)
