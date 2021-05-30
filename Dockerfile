@@ -11,5 +11,6 @@ LABEL maintainer="jonhall@us.ibm.com"
 COPY . /app
 WORKDIR /app
 RUN apt-get update
-RUN pip install -r requirements.txt
+RUN get
+RUN pip install -r requirements.txt --user
 CMD python generateDailyReport.py
