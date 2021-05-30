@@ -63,9 +63,7 @@ def setup_logging(
     else:
         logging.basicConfig(level=default_level)
 
-############################################################
-## READ CommandLine Arguments and load configuration file
-############################################################
+
 if __name__ == "__main__":
     setup_logging()
     parser = argparse.ArgumentParser(description="Generate report for daily provisioning statistics.")
@@ -98,11 +96,6 @@ if __name__ == "__main__":
     # Connect to SoftLayer API
     ######################################
     client = SoftLayer.Client(username=username, api_key=apikey, timeout=240)
-
-    ######################################
-    # set Script Behavior Flags
-    ######################################
-    lookupPowerOn = True
 
     df=pd.DataFrame()
     logging.info('Getting invoice list for Account from %s.' % (datetime.strftime(reportdate, "%m/%d/%Y")))
