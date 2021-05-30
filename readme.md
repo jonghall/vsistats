@@ -6,7 +6,7 @@ and use it to create a daily report on provisioning times for the previous day.
 ### Prereqs
 * IBM Cloud Classic Infrastructure (Aka Softlayer) apiKey and username.
 * Email Delivery, Powered by Sendgrid (https://cloud.ibm.com/catalog/infrastructure/email-delivery).
-* IBM Code Engine instance to run daily report.  Code Engine does not need to be in same IBM Cloud account that the report is run against.
+* IBM Code Engine (https://cloud.ibm.com/codeengine/overview).  Code Engine does not need to be in same IBM Cloud account that the report is run against.
 
 
 ### Environment Variables and Secrets
