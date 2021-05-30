@@ -1,40 +1,40 @@
-# **VSI STATS**
+# **VSI STATS FOR IBM CODE ENGINE**
 
-These scripts periodically capture data from hourly VSIs for IBM Cloud Classic Infrastructure during provisioning,
-and use it to create a daily report on provisioning times for the previous day.
+This script will produce a daily provisioning statistics report for IBM Classic Virtual Servers.  
 
 ### Prereqs
-* IBM Cloud Classic Infrastructure (Aka Softlayer) apiKey and username.
-* Email Delivery, Powered by Sendgrid (https://cloud.ibm.com/catalog/infrastructure/email-delivery).
-* IBM Code Engine (https://cloud.ibm.com/codeengine/overview).  Code Engine does not need to be in same IBM Cloud account that the report is run against.
-
-
-### Environment Variables and Secrets
-  * **sl_username** and **sl_apikey** must have at least the following Classic Infrastructure permissions.
+* IBM Cloud Classic Infrastructure (Aka Softlayer) apiKey and username with at least the following Classic Infrastructure permissions.
     * View Audit Log 
     * View Virtual Host Details
     * View Virtual Dedicated Host Details
     * Manage Public Images
     * ability to view all existing and future virtual devices by enabling "Auto virtual server access" on permissions to allow script to read future provsioned VSI data.
-  * The **sendgrid_apikey** should contain a valid sendGrid apiKey.
-  * The **sendgrid_from** field must contain one valid email address.
-  * The **sendgrid_to** field must contain at least one valid email address.  Multiple email addresses can be separated by a comma.
-  * The **sendgrid_subject** should specify the desired subject line of the nightly report emails.
+* Email Delivery, Powered by Sendgrid (https://cloud.ibm.com/catalog/infrastructure/email-delivery).
+* IBM Code Engine (https://cloud.ibm.com/codeengine/overview).  Code Engine does not need to be in same IBM Cloud account that the report is run against.
+
+
+### Environment Variables and Secrets
+  * **sl_username** should contain a valid SL username.
+  * **sl_apikey** should contain the valid APIkey associated with the username.
+  * **sendgrid_apikey** should contain a valid sendGrid apiKey.
+  * **sendgrid_from** field must contain one valid email address.
+  * **sendgrid_to** field must contain at least one valid email address.  Multiple email addresses can be separated by a comma.
+  * **sendgrid_subject** should specify the desired subject line of the nightly report emails.
 
  
-### Scheduing Code Engine job to run daily
+### Scheduling Code Engine job to run daily
 ````bazaar
-ibmcloud ce sub ping create --name report-run --destination dailyreport --destination-type job  --schedule '30 03  * * *'    
+ibmcloud ce sub ping create --name report-run --destination jobname --destination-type job  --schedule '30 03  * * *'    
 ````
 
 ### Container Build Requirements
 
-* Python 3.9 or newer must be installed on the compute node used to run the scripts.
+* Access to IBM Cloud or Docker Container Registry
 * [requirements.txt](requirements.txt) contain all the Python package requirements.
 * [Dockerfile](Dockerfile) contains the required container build parameters
 
 ### Daily Report Email output sent via IBM Cloud Email Delivery (aka Sendgrid)
-* A daily email will be sent by [generateDailyReport.py](generateDailyReport.py) 
+* A daily email will be sent by
 * In addition to the statistics summary included in the email, an Excel workbook with the detailed VSI data will be attached to the email.
 
 ````
@@ -69,12 +69,10 @@ All          34.0              10.4              11.570588 	        0.556528 	  
 
 
 ````
-### Excel Daily Output Example
-
-![example-output](example-output.png)
 
 ### Logging
 * [logging.json](logging.json) can be modified to suite logging needs.
+* As configured logging is to console and will be picked up by IBM Log Analysis if logging is enabled for Code Engine project
 
 ````
 [2021-05-16 12:08:07,457] INFO [generateDailyReport.py:345] Generating Statistics and formating email message.
