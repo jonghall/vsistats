@@ -17,7 +17,7 @@
       "class": "logging.handlers.RotatingFileHandler",
       "level": "INFO",
       "formatter": "simple",
-      "filename": "/var/log/vsistats.log",
+      "filename": "vsistats.log",
       "maxBytes": 10485760,
       "backupCount": 10,
       "encoding": "utf8"
