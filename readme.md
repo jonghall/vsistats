@@ -83,11 +83,54 @@ All          34.0              10.4              11.570588 	        0.556528 	  
 [2021-05-16 12:08:08,081] INFO [generateDailyReport.py:443] Finished Daily Provisioning Report Job for 05/15/2021.
 ````
 
+### Setting up IBM Code Engine and building container
+1. Create project, build job and job.
+    1. Open the Code Engine [console](https://cloud.ibm.com/codeengine/overview)
+    2. Select Start creating from Start from source code.
+    3. Select Job
+    4. Enter a name for the job such as _dailyreport_. Use a name for your job that is unique within the project.
+    5. Select a project from the list of available projects of if this is the first one, create a new one. Note that you must have a selected project to deploy an app.
+    6. Enter the URL for this repo, click Specify build details and change branch name to 'codeengine'. Click Next.
+    7. Select Dockerfile for Strategy, Dockerfile for Dockerfile, 10m for Timeout, and Medium for Build resources. Click Next.
+    8. Select a container registry location, such as IBM Registry, Dallas.
+    9. Select Automatic for Registry access.
+    10. Select an existing namespace or enter a name for a new one, for example, newnamespace.
+    11. Enter a name for your image and optionally a tag.
+    12. Click Done.
+    13. Click Create.
+
+2. Create configmaps and secrets.
+    1. From [project list](https://cloud.ibm.com/codeengine/projects), choose newly created project.
+    2. Select secrets and configmaps
+    3. click create, choose config map, and give it a name.  Add the following key value pairs
+      * **sendgrid_from** 
+      * **sendgrid_to**
+      * **sendgrid_subject** 
+    4. Select secrets and configmaps
+    5. click create, choose secrets, and give it a name.  Add the following key value pairs
+      * **sl_username** 
+      * **sl_apikey** 
+      * **sendgrid_apikey**
+
+3. Make secrets and configmaps available to job.
+    1. Choose the job previously created.
+    2. Click on the Environment variables tab.
+    3. Click add, choose reference to full configmap, and choose configmap created in previous step and click add.
+    4. Click add, choose reference to full secret, and choose secrets created in previous step and click add.
+    
+4. Build the container. 
+    1. From [project list](https://cloud.ibm.com/codeengine/projects), choose newly created project.
+    2. Choose Image Builds
+    3. Click create.
+
 **Links**
-SoftLayer Python SDK documentation
+**SoftLayer Python SDK documentation**
 * https://softlayer-api-python-client.readthedocs.io/en/latest/
 
-IBM Classic API's used
+**IBM Classic API's used**
 * https://sldn.softlayer.com/reference/services/SoftLayer_Account/getInvoices/
 * https://sldn.softlayer.com/reference/services/SoftLayer_Account/getHourlyVirtualGuests/
 * https://sldn.softlayer.com/reference/services/SoftLayer_Event_Log/
+
+**IBM Code Engine**
+* https://cloud.ibm.com/docs/codeengine
