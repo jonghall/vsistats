@@ -78,8 +78,15 @@ if __name__ == "__main__":
     else:
         reportdate=datetime.strptime(args.date+" 0:0:0","%m/%d/%Y %H:%M:%S")
 
+    ######################################
+    # Get Environment Variables
+    ######################################
     username=os.environ['sl_username']
     apikey=os.environ['sl_apikey']
+    sendGridApi = os.environ['sendgrid_apikey']
+    sendGridTo = os.environ['sendgrid_to'].split(",")
+    sendGridFrom = os.environ['sendgrid_from']
+    sendGridSubject = os.environ['sendgrid_subject']
 
     outputname="daily"+datetime.strftime(reportdate, "%m%d%Y")+".xlsx"
     central = pytz.timezone("US/Central")
@@ -96,20 +103,6 @@ if __name__ == "__main__":
     # set Script Behavior Flags
     ######################################
     lookupPowerOn = True
-    createExcel = True
-
-    ######################################
-    # Notification Variables
-    ######################################
-
-
-    sendEmails = True
-    sendGridApi = os.environ['sendgrid_apiKey']
-    sendGridTo = os.environ['sendgrid_to'].split(",")
-    sendGridFrom = os.environ['sendgrid_from']
-    sendGridSubject = os_environ['sendgrid_subject']
-
-
 
     df=pd.DataFrame()
     logging.info('Getting invoice list for Account from %s.' % (datetime.strftime(reportdate, "%m/%d/%Y")))
@@ -211,44 +204,39 @@ if __name__ == "__main__":
                 provisionDelta = convertTimeDelta(provisionDateStamp - createDateStamp)
 
                 found=0
-                if lookupPowerOn == True:
-                    logging.info('Searching event Log for POWERON detail for guestId %s.' % (guestId))
-                    # GET OLDEST POWERON EVENT FROM EVENTLOG FOR GUESTID AS INITIAL RESOURCE ALLOCATION TIMESTAMP
+                logging.debug('Searching event Log for POWERON detail for guestId %s.' % (guestId))
+                # GET OLDEST POWERON EVENT FROM EVENTLOG FOR GUESTID AS INITIAL RESOURCE ALLOCATION TIMESTAMP
 
-                    events=""
-                    try:
-                        time.sleep(1)
-                        events = client['Event_Log'].getAllObjects(mask="objectId,eventName,eventCreateDate",filter={
-                                                                'eventName': {'operation': 'Power On'},
-                                                                'objectId': {'operation': guestId}})
-                    except SoftLayer.SoftLayerAPIError as e:
-                        logging.error("Event_Log::getAllObjects: %s, %s" % (e.faultCode, e.faultString))
+                events=""
+                try:
+                    time.sleep(1)
+                    events = client['Event_Log'].getAllObjects(mask="objectId,eventName,eventCreateDate",filter={
+                                                            'eventName': {'operation': 'Power On'},
+                                                            'objectId': {'operation': guestId}})
+                except SoftLayer.SoftLayerAPIError as e:
+                    logging.error("Event_Log::getAllObjects: %s, %s" % (e.faultCode, e.faultString))
 
-                    for event in events:
-                        if event['eventName']=="Power On":
-                            eventdate = event["eventCreateDate"]
-                            eventdate = eventdate[0:29]+eventdate[-2:]
-                            eventdate = datetime.strptime(eventdate, "%Y-%m-%dT%H:%M:%S.%f%z")
-                            if eventdate<powerOnDateStamp:
-                                powerOnDateStamp = eventdate
-                                found=1
+                for event in events:
+                    if event['eventName']=="Power On":
+                        eventdate = event["eventCreateDate"]
+                        eventdate = eventdate[0:29]+eventdate[-2:]
+                        eventdate = datetime.strptime(eventdate, "%Y-%m-%dT%H:%M:%S.%f%z")
+                        if eventdate<powerOnDateStamp:
+                            powerOnDateStamp = eventdate
+                            found=1
 
-                    # Calculate poweron if found
-                    if found==1:
-                        logging.info('POWERON detail for guestId %s FOUND.' % (guestId))
-                        powerOnDateStamp=powerOnDateStamp.astimezone(central)
-                        powerOnDate=datetime.strftime(powerOnDateStamp,"%Y-%m-%d")
-                        powerOnTime=datetime.strftime(powerOnDateStamp,"%H:%M:%S")
-                        powerOnDelta=convertTimeDelta(powerOnDateStamp - createDateStamp)
-                    else:
-                        logging.warning('POWERON detail for guestId %s NOT FOUND.' % (guestId))
-                        powerOnDate="Not Found"
-                        powerOnTime="Not Found"
-                        powerOnDelta=0
+                # Calculate poweron if found
+                if found==1:
+                    logging.info('POWERON detail for guestId %s FOUND.' % (guestId))
+                    powerOnDateStamp=powerOnDateStamp.astimezone(central)
+                    powerOnDate=datetime.strftime(powerOnDateStamp,"%Y-%m-%d")
+                    powerOnTime=datetime.strftime(powerOnDateStamp,"%H:%M:%S")
+                    powerOnDelta=convertTimeDelta(powerOnDateStamp - createDateStamp)
                 else:
-                    powerOnDate = "Not Found"
-                    powerOnTime = "Not Found"
-                    powerOnDelta = 0
+                    logging.warning('POWERON detail for guestId %s NOT FOUND.' % (guestId))
+                    powerOnDate="Not Found"
+                    powerOnTime="Not Found"
+                    powerOnDelta=0
 
 
                 ######################################
@@ -321,12 +309,11 @@ if __name__ == "__main__":
         # Write Output to Excel
         ##########################################
 
-        if createExcel == True:
-            logging.info("Creating Excel File.")
-            writer = pd.ExcelWriter(outputname, engine='xlsxwriter')
-            df.to_excel(writer,'Detail')
-            imagePivot.to_excel(writer,'Image_Pivot')
-            writer.save()
+        logging.info("Creating Excel File.")
+        writer = pd.ExcelWriter(outputname, engine='xlsxwriter')
+        df.to_excel(writer,'Detail')
+        imagePivot.to_excel(writer,'Image_Pivot')
+        writer.save()
     else:
         logging.warning('No invoices found for %s.' % (datetime.strftime(reportdate, "%m/%d/%Y")))
         header_html = ("<p><center><b>Provisioning Statistics for %s</b></center></br></p>" % (
@@ -338,44 +325,43 @@ if __name__ == "__main__":
     #########################################
     # FORMAT & SEND EMAIL VIA SENDGRID ACCOUNT
     ##########################################
-    if sendEmails == True:
-        logging.info("Sending report via email.")
+    logging.info("Sending report via email.")
 
-        to_list = Personalization()
-        for email in sendGridTo:
-            to_list.add_to(Email(email))
+    to_list = Personalization()
+    for email in sendGridTo:
+        to_list.add_to(Email(email))
 
-        message = Mail(
-            from_email=sendGridFrom,
-            subject=sendGridSubject,
-            html_content=html
-        )
+    message = Mail(
+        from_email=sendGridFrom,
+        subject=sendGridSubject,
+        html_content=html
+    )
 
-        message.add_personalization(to_list)
+    message.add_personalization(to_list)
 
-        if len(InvoiceList) > 0:
-            file_path = os.path.join("./", outputname)
-            with open(file_path, 'rb') as f:
-                data = f.read()
-                f.close()
-            encoded = base64.b64encode(data).decode()
-            attachment = Attachment()
-            attachment.file_content = FileContent(encoded)
-            attachment.file_type = FileType('application/xlsx')
-            attachment.file_name = FileName(outputname)
-            attachment.disposition = Disposition('attachment')
-            attachment.content_id = ContentId('daily file')
-            message.attachment = attachment
-            try:
-                os.remove(file_path)
-                logging.info("%s file successfully deleted." % outputname)
-            except OSError as e:
-                logging.error("%s could not be deleted. (%s)" % (outputname,e))
+    if len(InvoiceList) > 0:
+        file_path = os.path.join("./", outputname)
+        with open(file_path, 'rb') as f:
+            data = f.read()
+            f.close()
+        encoded = base64.b64encode(data).decode()
+        attachment = Attachment()
+        attachment.file_content = FileContent(encoded)
+        attachment.file_type = FileType('application/xlsx')
+        attachment.file_name = FileName(outputname)
+        attachment.disposition = Disposition('attachment')
+        attachment.content_id = ContentId('daily file')
+        message.attachment = attachment
         try:
-            sg = SendGridAPIClient(sendGridApi)
-            response = sg.send(message)
-            logging.info("Email Send status code = %s." % response.status_code)
-        except Exception as e:
-            logging.error("Email Send Error = %s." % e.to_dict)
+            os.remove(file_path)
+            logging.info("%s file successfully deleted." % outputname)
+        except OSError as e:
+            logging.error("%s could not be deleted. (%s)" % (outputname,e))
+    try:
+        sg = SendGridAPIClient(sendGridApi)
+        response = sg.send(message)
+        logging.info("Email Send status code = %s." % response.status_code)
+    except Exception as e:
+        logging.error("Email Send Error = %s." % e.to_dict)
 
     logging.info('Finished Daily Provisioning Report Job for %s.' % (datetime.strftime(reportdate, "%m/%d/%Y")))
