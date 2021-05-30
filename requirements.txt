@@ -1,7 +1,6 @@
 certifi==2020.12.5
 chardet==4.0.0
 click==8.0.0
-cloudant==2.14.0
 configparser==5.0.2
 DateTime==4.3
 idna==2.10
