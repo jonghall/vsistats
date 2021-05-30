@@ -13,20 +13,6 @@ This script will produce a daily provisioning statistics report for IBM Classic 
 * IBM Code Engine (https://cloud.ibm.com/codeengine/overview).  Code Engine does not need to be in same IBM Cloud account that the report is run against.
 
 
-### Environment Variables and Secrets
-  * **sl_username** should contain a valid SL username.
-  * **sl_apikey** should contain the valid APIkey associated with the username.
-  * **sendgrid_apikey** should contain a valid sendGrid apiKey.
-  * **sendgrid_from** field must contain one valid email address.
-  * **sendgrid_to** field must contain at least one valid email address.  Multiple email addresses can be separated by a comma.
-  * **sendgrid_subject** should specify the desired subject line of the nightly report emails.
-
- 
-### Scheduling Code Engine job to run daily
-````bazaar
-ibmcloud ce sub ping create --name report-run --destination jobname --destination-type job  --schedule '30 03  * * *'    
-````
-
 ### Container Build Requirements
 
 * Access to IBM Cloud or Docker Container Registry
@@ -103,25 +89,26 @@ All          34.0              10.4              11.570588 	        0.556528 	  
     1. From [project list](https://cloud.ibm.com/codeengine/projects), choose newly created project.
     2. Select secrets and configmaps
     3. click create, choose config map, and give it a name.  Add the following key value pairs
-      * **sendgrid_from** 
-      * **sendgrid_to**
-      * **sendgrid_subject** 
+      * **sendgrid_from** field must contain one valid email address.
+      * **sendgrid_to** field must contain at least one valid email address.  Multiple email addresses can be separated by a comma.
+      * **sendgrid_subject** hould specify the desired subject line of the nightly report emails.
     4. Select secrets and configmaps
     5. click create, choose secrets, and give it a name.  Add the following key value pairs
-      * **sl_username** 
-      * **sl_apikey** 
-      * **sendgrid_apikey**
+      * **sl_username** IBM Cloud classic username
+      * **sl_apikey**  IBM Cloud classic apikey
+      * **sendgrid_apikey** Sendgrid apikey
 
 3. Make secrets and configmaps available to job.
     1. Choose the job previously created.
     2. Click on the Environment variables tab.
     3. Click add, choose reference to full configmap, and choose configmap created in previous step and click add.
     4. Click add, choose reference to full secret, and choose secrets created in previous step and click add.
-    
-4. Build the container. 
-    1. From [project list](https://cloud.ibm.com/codeengine/projects), choose newly created project.
-    2. Choose Image Builds
-    3. Click create.
+ 
+4. Scheduling Code Engine job to run daily
+   ````bazaar
+   ibmcloud ce sub ping create --name report-run --destination jobname --destination-type job  --schedule '30 03  * * *'    
+   ````
+      
 
 **Links**
 **SoftLayer Python SDK documentation**
