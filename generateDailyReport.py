@@ -121,7 +121,7 @@ if __name__ == "__main__":
                 })
         except SoftLayer.SoftLayerAPIError as e:
             logging.error("Account::getInvoices: %s, %s" % (e.faultCode, e.faultString))
-            df = pd.DataFrame()
+            quit()
 
     for invoice in InvoiceList:
         invoiceID = invoice['id']
