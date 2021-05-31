@@ -105,18 +105,18 @@ All          34.0              10.4              11.570588 	        0.556528 	  
     4. Click add, choose reference to full secret, and choose secrets created in previous step and click add.
  
 4. Scheduling Code Engine job to run daily
-   1.  Install the Code Engine Plugin
-   ````
-   ibmcloud plugin install code-engine 
-   ````  
-
+   
+   1.  Install IBM Cloud CLI and Code Engine Plugin (https://cloud.ibm.com/docs/codeengine?topic=codeengine-install-cli)
    2. Using IBM Cloud CLI configure a ping subscription to trigger the job.
+      
    ````bazaar
+   ibmcloud login --apikey <apikey>
    ibmcloud target -r us-south -g myresource-group
    ibmcloud ce project select --name vsistats
-   ibmcloud ce sub ping create --name report-run --destination dailyreport --destination-type job  --schedule '30 03  * * *'    
+   ibmcloud ce sub ping create --name report-run --destination dailyreport --destination-type job  --schedule '30 08  * * *'    
+   ibmcloud ce sub pring get --name report-run
    ````
-      
+   _schedule times are by default specified in UTC time._   
 
 **Links**
 **SoftLayer Python SDK documentation**
