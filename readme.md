@@ -74,14 +74,14 @@ All          34.0              10.4              11.570588 	        0.556528 	  
     1. Open the Code Engine [console](https://cloud.ibm.com/codeengine/overview)
     2. Select Start creating from Start from source code.
     3. Select Job
-    4. Enter a name for the job such as _dailyreport_. Use a name for your job that is unique within the project.
-    5. Select a project from the list of available projects of if this is the first one, create a new one. Note that you must have a selected project to deploy an app.
-    6. Enter the URL for this GitHub repository and click specify build details.  Make adjustments if needed to URL and Branch name.  Click Next.
-    7. Select Dockerfile for Strategy, Dockerfile for Dockerfile, 10m for Timeout, and Medium for Build resources. Click Next.
+    4. Enter _dailyreport_ as the name of the job. The name for your job should be unique within the project.
+    5. Select a project from the list of available projects of if this is the first one, create a new one called _vsistats_. Note that you must have a selected project to deploy an app.
+    6. Enter the URL for this GitHub repository and click specify build details.  Make adjustments if needed to URL and Branch name desired.  Click Next.
+    7. Select Dockerfile for Strategy, Dockerfile for the name of Dockerfile, 10m for Timeout, and Medium for Build resources. Click Next.
     8. Select a container registry location, such as IBM Registry, Dallas.
     9. Select Automatic for Registry access.
-    10. Select an existing namespace or enter a name for a new one, for example, newnamespace.
-    11. Enter a name for your image and optionally a tag.
+    10. Select an existing namespace or enter a name for a new one, for example, _vsistats_.
+    11. Enter a name for your image, such as _dailyreport_ and optionally a tag.
     12. Click Done.
     13. Click Create.
 
@@ -105,16 +105,15 @@ All          34.0              10.4              11.570588 	        0.556528 	  
     4. Click add, choose reference to full secret, and choose secrets created in previous step and click add.
  
 4. Scheduling Code Engine job to run daily
-   
-   1.  Install IBM Cloud CLI and Code Engine Plugin (https://cloud.ibm.com/docs/codeengine?topic=codeengine-install-cli)
-   2. Using IBM Cloud CLI configure a ping subscription to trigger the job.
+   1. Install IBM Cloud CLI and Code Engine Plugin (https://cloud.ibm.com/docs/codeengine?topic=codeengine-install-cli)
+   2. Using the IBM Cloud CLI to configure a ping subscription to trigger the execution of the job.
       
    ````bazaar
    ibmcloud login --apikey <apikey>
    ibmcloud target -r us-south -g myresource-group
    ibmcloud ce project select --name vsistats
    ibmcloud ce sub ping create --name report-run --destination dailyreport --destination-type job  --schedule '30 08  * * *'    
-   ibmcloud ce sub pring get --name report-run
+   ibmcloud ce sub ping get --name report-run
    ````
    _schedule times are by default specified in UTC time._   
 
