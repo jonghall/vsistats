@@ -122,7 +122,7 @@ if __name__ == "__main__":
         except SoftLayer.SoftLayerAPIError as e:
             logging.error("Account::getInvoices: %s, %s" % (e.faultCode, e.faultString))
             quit()
-
+    logging.info("%s invoices found for %s" % (len(InvoiceList),datetime.strftime(reportdate, "%m/%d/%Y")))
     for invoice in InvoiceList:
         invoiceID = invoice['id']
         invoicedetail = ""
@@ -130,9 +130,9 @@ if __name__ == "__main__":
         while invoicedetail == "":
             try:
                 time.sleep(1)
-                invoicedetail = client['Billing_Invoice'].getObject(id=invoiceID, mask="closedDate,invoiceTotalAmount, invoiceTopLevelItems," \
-                                                                                       "invoiceTopLevelItems.product,invoiceTopLevelItems.location," \ 
-                                                                                       "invoiceTopLevelItems.billingItem.cancellationDate, " \
+                invoicedetail = client['Billing_Invoice'].getObject(id=invoiceID, mask="closedDate,invoiceTotalAmount,invoiceTopLevelItems," \
+                                                                                       "invoiceTopLevelItems.product,invoiceTopLevelItems.location," \
+                                                                                       "invoiceTopLevelItems.billingItem.cancellationDate," \
                                                                                        "invoiceTopLevelItems.billingItem.provisionTransaction," \
                                                                                        "invoiceTopLevelItems.filteredAssociatedChildren.product," \
                                                                                        "invoiceTopLevelItems.filteredAssociatedChildren.categoryCode," \
