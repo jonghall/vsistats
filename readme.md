@@ -17,7 +17,7 @@ This script will produce a daily provisioning statistics report for IBM Classic 
 
 * Access to IBM Cloud or Docker Container Registry
 * [requirements.txt](requirements.txt) contain all the Python package requirements.
-* [Dockerfile](Dockerfile) contains the required container build parameters
+* [Dockerfile](../IBM_Cloud_Classic_API/Billing/Dockerfile) contains the required container build parameters
 
 ### Daily Report Email output sent via IBM Cloud Email Delivery (aka Sendgrid)
 * A daily email will be sent by

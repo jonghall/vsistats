@@ -125,21 +125,25 @@ if __name__ == "__main__":
 
     for invoice in InvoiceList:
         invoiceID = invoice['id']
-        invoicedetail=""
-        logging.info('Looking up InvoiceId %s.' % (invoiceID))
+        invoicedetail = ""
+        logging.info("Getting invoice top level items for invoice %s " % invoiceID)
         while invoicedetail == "":
             try:
                 time.sleep(1)
-                invoicedetail = client['Billing_Invoice'].getObject(id=invoiceID, mask="closedDate, invoiceTopLevelItems, invoiceTopLevelItems.product,invoiceTopLevelItems.location")
+                invoicedetail = client['Billing_Invoice'].getObject(id=invoiceID, mask="closedDate, invoiceTotalAmount, invoiceTopLevelItems, invoiceTopLevelItems.product,invoiceTopLevelItems.location, invoiceTopLevelItems.billingItem.cancellationDate, " \
+                                                                                       "invoiceTopLevelItems.billingItem.provisionTransaction," \
+                                                                                       "invoiceTopLevelItems.filteredAssociatedChildren.product," \
+                                                                                       "invoiceTopLevelItems.filteredAssociatedChildren.categoryCode," \
+                                                                                       "invoiceTopLevelItems.filteredAssociatedChildren.description")
             except SoftLayer.SoftLayerAPIError as e:
                 logging.error("Billing_Invoice::getObject: %s, %s" % (e.faultCode, e.faultString))
                 time.sleep(5)
 
         invoiceTopLevelItems=invoicedetail['invoiceTopLevelItems']
         invoiceDate=convertTimestamp(invoicedetail["closedDate"])
+
         for item in invoiceTopLevelItems:
             if item['categoryCode']=="guest_core":
-                itemId = item['id']
                 billingItemId = item['billingItemId']
                 location=item['location']['name']
                 hostName = item['hostName']+"."+item['domainName']
@@ -151,25 +155,8 @@ if __name__ == "__main__":
                     product=item['product']['description']
                     cores=item['product']['totalPhysicalCoreCount']
 
-                billing_detail=""
-                logging.info('Looking up billing Invoice Detail for %s.' % (itemId))
-
-                while billing_detail == "":
-                    try:
-                        time.sleep(1)
-                        billing_detail = client['Billing_Invoice_Item'].getObject(id=itemId,
-                                                                                  mask="filteredAssociatedChildren.product," \
-                                                                                       "filteredAssociatedChildren.categoryCode," \
-                                                                                       "filteredAssociatedChildren.description," \
-                                                                                       "billingItem.cancellationDate, " \
-                                                                                       "billingItem.provisionTransaction")
-                    except SoftLayer.SoftLayerAPIError as e:
-                        logging.error("Billing_Invoice_Item::getObject(%s): %s, %s" % (itemId,e.faultCode, e.faultString))
-                        time.sleep(5)
-
-
-                filteredAssociatedChildren=billing_detail['filteredAssociatedChildren']
-                billingItem=billing_detail['billingItem']
+                filteredAssociatedChildren=item['filteredAssociatedChildren']
+                billingItem=item['billingItem']
 
                 vsios=getDescription("os", filteredAssociatedChildren)
                 memory=getDescription("ram", filteredAssociatedChildren)
