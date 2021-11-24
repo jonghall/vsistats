@@ -71,8 +71,9 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
+    central = pytz.timezone("US/Central")
     if args.date == None:
-        reportdate = datetime.now() - timedelta(days=1)
+        reportdate = datetime.now().astimezone(central) - timedelta(days=1)
     else:
         reportdate=datetime.strptime(args.date+" 0:0:0","%m/%d/%Y %H:%M:%S")
 
@@ -87,7 +88,6 @@ if __name__ == "__main__":
     sendGridSubject = os.environ['sendgrid_subject']
 
     outputname="daily"+datetime.strftime(reportdate, "%m%d%Y")+".xlsx"
-    central = pytz.timezone("US/Central")
     startdate = datetime.strftime(reportdate, "%m/%d/%Y") + " 0:0:0"
     enddate = datetime.strftime(reportdate,"%m/%d/%Y") + " 23:59:59"
     logging.info('Running Daily Provisioning Report for %s.' % (datetime.strftime(reportdate, "%m/%d/%Y")))
@@ -121,7 +121,7 @@ if __name__ == "__main__":
                 })
         except SoftLayer.SoftLayerAPIError as e:
             logging.error("Account::getInvoices: %s, %s" % (e.faultCode, e.faultString))
-            df = pd.DataFrame()
+            quit()
 
     for invoice in InvoiceList:
         invoiceID = invoice['id']
