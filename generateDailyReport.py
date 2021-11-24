@@ -130,7 +130,9 @@ if __name__ == "__main__":
         while invoicedetail == "":
             try:
                 time.sleep(1)
-                invoicedetail = client['Billing_Invoice'].getObject(id=invoiceID, mask="closedDate, invoiceTotalAmount, invoiceTopLevelItems, invoiceTopLevelItems.product,invoiceTopLevelItems.location, invoiceTopLevelItems.billingItem.cancellationDate, " \
+                invoicedetail = client['Billing_Invoice'].getObject(id=invoiceID, mask="closedDate,invoiceTotalAmount, invoiceTopLevelItems," \
+                                                                                       "invoiceTopLevelItems.product,invoiceTopLevelItems.location," \ 
+                                                                                       "invoiceTopLevelItems.billingItem.cancellationDate, " \
                                                                                        "invoiceTopLevelItems.billingItem.provisionTransaction," \
                                                                                        "invoiceTopLevelItems.filteredAssociatedChildren.product," \
                                                                                        "invoiceTopLevelItems.filteredAssociatedChildren.categoryCode," \
@@ -218,11 +220,6 @@ if __name__ == "__main__":
                     powerOnTime="Not Found"
                     powerOnDelta=0
 
-
-                ######################################
-                # Get VSI detail from Cloudant database
-                ######################################
-
                 row = {'InvoiceId': invoiceID,
                        'BillingItemId': billingItemId,
                        'GuestId': guestId,
@@ -248,7 +245,7 @@ if __name__ == "__main__":
         ########################################################
         ## Generate Statisitics & Create HTML for message
         #########################################################
-        logging.info("Generating Statistics and formating email message.")
+        logging.info("Generating Statistics and formatting email message.")
         header_html = ("<p><center><b>Provisioning Statistics for %s</b></center></br></p>" % ((datetime.strftime(reportdate, "%m/%d/%Y"))))
 
         ########################################################
@@ -344,4 +341,4 @@ if __name__ == "__main__":
     except Exception as e:
         logging.error("Email Send Error = %s." % e.to_dict)
 
-    logging.info('Finished Daily Provisioning Report Job for %s.' % (datetime.strftime(reportdate, "%m/%d/%Y")))
+    logging.info('Finished visstats Report Job for %s.' % (datetime.strftime(reportdate, "%m/%d/%Y")))
