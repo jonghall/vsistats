@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # generateDailyReport.py - A script to generate daily provisioning statistics for IBM Cloud Classic Virtual Servers
 # Author: Jon Hall
-# Copyright (c) 2021
+# Copyright (c) 2022
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -126,7 +126,7 @@ if __name__ == "__main__":
     for invoice in InvoiceList:
         invoiceID = invoice['id']
         invoicedetail = ""
-        logging.info("Getting invoice top level items for invoice %s " % invoiceID)
+        logging.info("Getting top level items from invoice %s " % invoiceID)
         while invoicedetail == "":
             try:
                 time.sleep(1)
@@ -240,8 +240,10 @@ if __name__ == "__main__":
                        'ProvisionedDelta': provisionDelta
                        }
                 df = df.append(row, ignore_index=True)
+            else:
+                logging.info("Top Level Item ignored.  Not an hourly virtual server.")
 
-    if len(InvoiceList)>0:
+    if not df.empty:
         ########################################################
         ## Generate Statisitics & Create HTML for message
         #########################################################
@@ -292,10 +294,10 @@ if __name__ == "__main__":
         imagePivot.to_excel(writer,'Image_Pivot')
         writer.save()
     else:
-        logging.warning('No invoices found for %s.' % (datetime.strftime(reportdate, "%m/%d/%Y")))
+        logging.warning('No invoices found with hourly virtual servers for %s.' % (datetime.strftime(reportdate, "%m/%d/%Y")))
         header_html = ("<p><center><b>Provisioning Statistics for %s</b></center></br></p>" % (
             (datetime.strftime(reportdate, "%m/%d/%Y"))))
-        message_html = ("<p><b>No Invoices found for this date.</b></p>")
+        message_html = ("<p><b>No Invoices with virtual servers found for this date.</b></p>")
         html = header_html + message_html
 
 
@@ -316,7 +318,7 @@ if __name__ == "__main__":
 
     message.add_personalization(to_list)
 
-    if len(InvoiceList) > 0:
+    if not df.empty:
         file_path = os.path.join("./", outputname)
         with open(file_path, 'rb') as f:
             data = f.read()
